@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   DollarSign, TrendingUp, TrendingDown, Plus, Pencil, Trash2,
-  Building2, ShoppingCart, Briefcase, PiggyBank, Target, Search
+  Building2, ShoppingCart, Briefcase, PiggyBank, Target, Search,
+  Upload, Download
 } from 'lucide-react';
 import ServiceForm from '@/components/ServiceForm';
 import ProductionCostForm from '@/components/ProductionCostForm';
@@ -12,6 +13,8 @@ import ProviderForm from '@/components/ProviderForm';
 import BookSaleForm from '@/components/BookSaleForm';
 import BudgetForm from '@/components/BudgetForm';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import ExcelImportModal from '@/components/ExcelImportModal';
+import { exportFinancesToExcel } from '@/lib/excelUtils';
 
 type FinTab = 'servicios' | 'costos' | 'presupuesto' | 'proveedores' | 'ventas';
 
@@ -54,9 +57,19 @@ export default function FinancesPage() {
   const [showProvider, setShowProvider] = useState(false);
   const [showSale, setShowSale] = useState(false);
   const [showBudget, setShowBudget] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [deleteItem, setDeleteItem] = useState<{ table: string; id: string; label: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const handleExportExcel = () => {
+    exportFinancesToExcel({
+      year: selectedYear,
+      costs,
+      services,
+      sales,
+    });
+  };
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -153,6 +166,12 @@ export default function FinancesPage() {
             <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)', fontSize: '14px', fontWeight: 600 }}>
               {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
+            <button className="btn btn-secondary" onClick={() => setShowImportModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Upload size={16} /> Importar Excel
+            </button>
+            <button className="btn btn-secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Download size={16} /> Exportar Excel
+            </button>
             <button className="btn btn-primary" onClick={() => { setEditItem(null); if (activeTab === 'servicios') setShowService(true); else if (activeTab === 'costos') setShowCost(true); else if (activeTab === 'ventas') setShowSale(true); else if (activeTab === 'presupuesto') setShowBudget(true); else setShowProvider(true); }}>
               <Plus size={18} /> Nuevo
             </button>
@@ -482,6 +501,7 @@ export default function FinancesPage() {
       <ProviderForm isOpen={showProvider} onClose={() => { setShowProvider(false); setEditItem(null); }} onSaved={loadData} provider={editItem} />
       <BookSaleForm isOpen={showSale} onClose={() => { setShowSale(false); setEditItem(null); }} onSaved={loadData} sale={editItem} />
       <BudgetForm isOpen={showBudget} onClose={() => { setShowBudget(false); setEditItem(null); }} onSaved={loadData} item={editItem} defaultYear={selectedYear} />
+      <ExcelImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImported={loadData} selectedYear={selectedYear} />
       <ConfirmDialog isOpen={!!deleteItem} onClose={() => setDeleteItem(null)} onConfirm={handleDelete} loading={deleting} title="Eliminar Registro" message={`¿Eliminar "${deleteItem?.label}"?`} />
     </>
   );
