@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados Preliminares Publindex 2026 – Universidad Simón Bolívar</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f0f2f5;
+    color: #1e293b;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .container {
+    width: 900px;
+    max-width: 100%;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    padding: 36px 30px 28px;
+    background: linear-gradient(135deg, #0c2d5e 0%, #1a4a8a 50%, #0c2d5e 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #c9a227, #f0d060, #c9a227);
+  }
+  .header .badge {
+    display: inline-block;
+    background: rgba(240, 208, 96, 0.15);
+    border: 1px solid rgba(240, 208, 96, 0.5);
+    color: #f0d060;
+    padding: 5px 18px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .header h1 span { color: #f0d060; }
+  .header h2 {
+    font-size: 15px;
+    font-weight: 500;
+    color: #b0c4de;
+    margin-bottom: 4px;
+  }
+  .header .institution {
+    font-size: 13px;
+    color: #7a9ec5;
+    font-weight: 400;
+  }
+
+  /* SUMMARY CARDS */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .summary-card {
+    text-align: center;
+    padding: 22px 12px;
+    border-right: 1px solid #e2e8f0;
+  }
+  .summary-card:last-child { border-right: none; }
+  .summary-card .number {
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .summary-card .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94a3b8;
+  }
+  .summary-card.up .number { color: #16a34a; }
+  .summary-card.same .number { color: #d97706; }
+  .summary-card.down .number { color: #dc2626; }
+  .summary-card.scopus .number { color: #2563eb; }
+
+  /* TABLE */
+  .table-wrapper {
+    padding: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 14px 16px;
+    text-align: center;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  thead th:first-child {
+    text-align: left;
+    padding-left: 28px;
+  }
+  tbody td {
+    padding: 20px 16px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    font-weight: 500;
+    vertical-align: middle;
+    color: #475569;
+  }
+  tbody td:first-child {
+    text-align: left;
+    padding-left: 28px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+  }
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Category badges */
+  .cat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 17px;
+  }
+  .cat-b { background: #eff6ff; color: #2563eb; border: 2px solid #93c5fd; }
+  .cat-c { background: #fffbeb; color: #d97706; border: 2px solid #fcd34d; }
+
+  /* Trend arrows */
+  .trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .trend-up {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+  }
+  .trend-same {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+  .trend-down {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+
+  /* Scopus badge */
+  .scopus-yes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid #bbf7d0;
+  }
+  .scopus-no {
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .quartile {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 3px;
+    font-weight: 600;
+  }
+
+  /* HIGHLIGHT ROWS */
+  .row-highlight-up {
+    background: #f0fdf4;
+  }
+  .row-highlight-up:hover {
+    background: #dcfce7 !important;
+  }
+  .row-highlight-down {
+    background: #fef2f2;
+  }
+  .row-highlight-down:hover {
+    background: #fee2e2 !important;
+  }
+
+  /* Pending section */
+  .pending {
+    padding: 18px 28px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .pending-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .pending-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .pending-item {
+    font-size: 12px;
+    color: #94a3b8;
+    background: #f8fafc;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
+  }
+
+  /* FOOTER */
+  .footer {
+    background: #f8fafc;
+    padding: 18px 28px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer .source {
+    font-size: 10px;
+    color: #94a3b8;
+  }
+  .footer .author {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .footer .logo-text {
+    font-size: 11px;
+    font-weight: 800;
+    color: #c9a227;
+    letter-spacing: 1px;
+  }
+
+  /* Print styles */
+  @media print {
+    body { background: white; padding: 0; }
+    .container { width: 100%; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">Resultados Preliminares</div>
+    <h1>PUBLINDEX <span>2026</span></h1>
+    <h2>Convocatoria 977 – Clasificación de Revistas Científicas Nacionales</h2>
+    <div class="institution">Universidad Simón Bolívar · Dirección de Publicaciones</div>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary">
+    <div class="summary-card up">
+      <div class="number">1</div>
+      <div class="label">Subió ▲</div>
+    </div>
+    <div class="summary-card same">
+      <div class="number">3</div>
+      <div class="label">Se mantienen →</div>
+    </div>
+    <div class="summary-card down">
+      <div class="number">1</div>
+      <div class="label">Bajó ▼</div>
+    </div>
+    <div class="summary-card scopus">
+      <div class="number">3/5</div>
+      <div class="label">En Scopus</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Revista</th>
+          <th>Anterior (2022)</th>
+          <th>Publindex 2026</th>
+          <th>Tendencia</th>
+          <th>Scopus</th>
+          <th>Criterio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-highlight-up">
+          <td>Justicia</td>
+          <td><span class="cat cat-c">C</span></td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="trend trend-up">▲ Subió</span></td>
+          <td>
+            <span class="scopus-yes">✓ SCOPUS</span>
+            <span class="quartile">Q3 JCR</span>
+          </td>
+          <td style="font-size:11px; color:#64748b;">Cuartil 3<br>Journal Citation Reports</td>
+        </tr>
+        <tr>
+          <td>Educación y Humanismo</td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="trend trend-same">→ Igual</span></td>
+          <td>
+            <span class="scopus-yes">✓ SCOPUS</span>
+            <span class="quartile">Q3 SJR</span>
+          </td>
+          <td style="font-size:11px; color:#64748b;">Cuartil 3<br>Scimago Journal Rank</td>
+        </tr>
+        <tr>
+          <td>Investigación e Innovación<br>en Ingenierías</td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="trend trend-same">→ Igual</span></td>
+          <td><span class="scopus-no">— No</span></td>
+          <td style="font-size:11px; color:#cbd5e1;">—</td>
+        </tr>
+        <tr>
+          <td>Desarrollo Gerencial</td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="trend trend-same">→ Igual</span></td>
+          <td><span class="scopus-no">— No</span></td>
+          <td style="font-size:11px; color:#cbd5e1;">—</td>
+        </tr>
+        <tr class="row-highlight-down">
+          <td>Psicogente</td>
+          <td><span class="cat cat-b">B</span></td>
+          <td><span class="cat cat-c">C</span></td>
+          <td><span class="trend trend-down">▼ Bajó</span></td>
+          <td>
+            <span class="scopus-yes">✓ SCOPUS</span>
+            <span class="quartile">Q4 SJR</span>
+          </td>
+          <td style="font-size:11px; color:#64748b;">Cuartil 4<br>Scimago Journal Rank</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PENDING -->
+  <div class="pending">
+    <div class="pending-title">Revistas pendientes de resultado (3)</div>
+    <div class="pending-list">
+      <span class="pending-item">Investigación y Desarrollo en TIC</span>
+      <span class="pending-item">Liderazgo Estratégico</span>
+      <span class="pending-item">Tejidos Sociales</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="source">Fuente: Minciencias – Resultados preliminares Convocatoria 977-2026</div>
+    <div class="logo-text">PUBMANAGER</div>
+    <div class="author">Elaboró: Jorge Navarro Beltrán · Junio 2026</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+BEGIN;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16433' WHERE LOWER(TRIM(title)) = LOWER('Contra el silenciamiento y la invisibilización: muchas formas de resistencia cultural') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16394' WHERE LOWER(TRIM(title)) = LOWER('Corazón de acordeón') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16371' WHERE LOWER(TRIM(title)) = LOWER('Tomo conmemorativo año del centenario José Consuegra Higgins 1924-2024') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16467' WHERE LOWER(TRIM(title)) = LOWER('Estrategias financieras y aspectos fiscales del sector empresarial en Colombia') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16925' WHERE LOWER(TRIM(title)) = LOWER('Ecosistema en movimiento emergente. Creación de emprendimientos tecnológicos en territorios de bajo desempeño innovador') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16937' WHERE LOWER(TRIM(title)) = LOWER('Explorando la biología desde la experimentación') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/16936', notes = 'Es un Policy brief. Aunque aparece en los apartados de libro, no se debería catalogar. Tampoco tiene ISBN' WHERE LOWER(TRIM(title)) = LOWER('Prevención de la trata de personas: Estrategias comunitarias y políticas  públicas para enfrentar un delito en expansión') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17028' WHERE LOWER(TRIM(title)) = LOWER('Experiencia significativa: educación como función social') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17010' WHERE LOWER(TRIM(title)) = LOWER('Experimentos de física de ondas y partículas') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17025' WHERE LOWER(TRIM(title)) = LOWER('Experimentos de física mecánica') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17026' WHERE LOWER(TRIM(title)) = LOWER('Experimentos de física: electricidad y magnetismo') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17031' WHERE LOWER(TRIM(title)) = LOWER('Hablando con máquinas') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17096' WHERE LOWER(TRIM(title)) = LOWER('Los cimientos epistemológicos de la administración: Objeto, estatuto científico, desarrollo disciplinar y metodología') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17097', notes = 'PDF no disponible en Bonga' WHERE LOWER(TRIM(title)) = LOWER('Pinceladas de valores y costumbrismo') AND repository_url IS NULL;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17324' WHERE LOWER(TRIM(title)) = LOWER('Gobierno y gobernanza de la educación superior en Iberoamérica: teorías, prácticas') AND repository_url IS NULL;
+COMMIT;

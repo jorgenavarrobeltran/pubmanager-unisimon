@@ -1,0 +1,15 @@
+INSERT INTO people (id, full_name, country) VALUES
+('b9167728-4b53-4cfd-9c6b-c06e32e7a01a', 'Manuel Sánchez', 'Colombia'),
+('59a6fe57-ad03-4906-b8b6-1d20f6032b9f', 'Johan Acosta López', 'Colombia'),
+('3b6013da-dfa5-4b69-9f66-0f7a9e090862', 'Luz Mery Noguera', 'Colombia'),
+('434c4dec-30dc-49e7-8e56-36f4aab5d169', 'Martha Cervantes', 'Colombia'),
+('5e89ee60-fe11-4e29-9819-bbfe0f3ff81a', 'Jeymis Cervantes', 'Colombia'),
+('4219221d-a153-4140-b7b2-8c98181bd5a3', 'Marisol Quintero', 'Colombia'),
+('d45d2137-2bb1-4e60-bfe4-fc972e4c7bf5', 'Giomar Jiménez', 'Colombia'),
+('cf86589c-e442-4117-ac21-4c3ec40623f8', 'Ronald Enrique Álvarez Martínez', 'Colombia'),
+('55c62c36-e7cc-4e3e-b7ca-498c8ae58bf5', 'Jairo Orlando Castañeda Villacob', 'Colombia'),
+('66266549-7695-48f7-ac17-b99f3370d0ba', 'Diana Carolina Martínez Torres', 'Colombia'),
+('1c436050-044f-4aaa-954f-42387f57c93e', 'Paola Andrea Amar Sepúlveda', 'Colombia'),
+('3e4a19fc-4bfd-4306-a662-4250f50a56d8', 'Paola Milena Larios Giraldo', 'Colombia'),
+('229722ae-5262-457f-a133-7acf8ed7b7fa', 'Efraín Llanos Henríquez', 'Colombia'),
+('060c52da-c4d1-4b95-9abd-0dde1157a8c4', 'Buenaventura Russeau Pupo', 'Colombia');

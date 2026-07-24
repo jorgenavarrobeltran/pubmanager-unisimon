@@ -1,0 +1,5 @@
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17026' WHERE LOWER(TRIM(title)) = LOWER('Experimentos de física: electricidad y magnetismo') AND repository_url IS NULL;;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17031' WHERE LOWER(TRIM(title)) = LOWER('Hablando con máquinas') AND repository_url IS NULL;;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17096' WHERE LOWER(TRIM(title)) = LOWER('Los cimientos epistemológicos de la administración: Objeto, estatuto científico, desarrollo disciplinar y metodología') AND repository_url IS NULL;;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17097', notes = 'PDF no disponible en Bonga' WHERE LOWER(TRIM(title)) = LOWER('Pinceladas de valores y costumbrismo') AND repository_url IS NULL;;
+UPDATE books SET repository_url = 'https://hdl.handle.net/20.500.12442/17324' WHERE LOWER(TRIM(title)) = LOWER('Gobierno y gobernanza de la educación superior en Iberoamérica: teorías, prácticas') AND repository_url IS NULL;;
