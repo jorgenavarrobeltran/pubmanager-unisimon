@@ -77,19 +77,30 @@ export default function FinancesPage() {
     const yearEnd = `${selectedYear}-12-31`;
 
     const [sRes, cRes, bRes, pRes, slRes, tRes] = await Promise.all([
-      supabase.from('external_services').select('*').gte('date', yearStart).lte('date', yearEnd).order('date', { ascending: false }),
+      supabase.from('external_services').select('*').order('created_at', { ascending: false }),
       supabase.from('production_costs').select('*').gte('date', yearStart).lte('date', yearEnd).order('date', { ascending: false }),
       supabase.from('budget_items').select('*').eq('year', selectedYear).order('category'),
       supabase.from('providers').select('*').order('name'),
-      supabase.from('book_sales').select('*, books(title)').gte('date', yearStart).lte('date', yearEnd).order('date', { ascending: false }),
+      supabase.from('book_sales').select('*, books(title)').order('created_at', { ascending: false }),
       supabase.from('revenue_targets').select('*').eq('year', selectedYear).single(),
     ]);
 
-    setServices(sRes.data || []);
+    // Filtrar servicios por el año seleccionado
+    const filteredServices = (sRes.data || []).filter((s: any) => {
+      const d = s.request_date || s.date || s.created_at;
+      return d && d.startsWith(String(selectedYear));
+    });
+
+    const filteredSales = (slRes.data || []).filter((sl: any) => {
+      const d = sl.date || sl.created_at;
+      return d && d.startsWith(String(selectedYear));
+    });
+
+    setServices(filteredServices);
     setCosts(cRes.data || []);
     setBudget(bRes.data || []);
     setProviders(pRes.data || []);
-    setSales(slRes.data || []);
+    setSales(filteredSales);
     setRevenueTarget(tRes.data?.target_amount || 30000000);
     setLoading(false);
   }, [selectedYear]);
@@ -128,16 +139,24 @@ export default function FinancesPage() {
       expense: 0,
     }));
     services.filter(s => s.status === 'facturado' || s.status === 'pagado').forEach(s => {
-      const m = new Date(s.date).getMonth();
-      months[m].income += s.amount || 0;
+      const d = s.request_date || s.date || s.created_at;
+      if (d) {
+        const m = new Date(d).getMonth();
+        if (!isNaN(m) && months[m]) months[m].income += s.amount || 0;
+      }
     });
     sales.forEach(s => {
-      const m = new Date(s.date).getMonth();
-      months[m].income += s.total_amount || 0;
+      const d = s.date || s.created_at;
+      if (d) {
+        const m = new Date(d).getMonth();
+        if (!isNaN(m) && months[m]) months[m].income += s.total_amount || 0;
+      }
     });
     costs.forEach(c => {
-      const m = new Date(c.date).getMonth();
-      months[m].expense += c.amount || 0;
+      if (c.date) {
+        const m = new Date(c.date).getMonth();
+        if (!isNaN(m) && months[m]) months[m].expense += c.amount || 0;
+      }
     });
     return months;
   }, [services, costs, sales]);
@@ -290,7 +309,7 @@ export default function FinancesPage() {
                   <tbody>
                     {services.map(s => (
                       <tr key={s.id}>
-                        <td style={{ fontSize: '12px', color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>{s.date}</td>
+                        <td style={{ fontSize: '12px', color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>{s.date || s.request_date || (s.created_at ? s.created_at.substring(0, 10) : '—')}</td>
                         <td><span style={{ fontSize: '12px' }}>{SERVICE_LABELS[s.service_type] || s.service_type}</span></td>
                         <td style={{ fontWeight: 600 }}>{s.client_name}</td>
                         <td style={{ fontWeight: 700, color: '#43A047' }}>{formatCOP(s.amount)}</td>
