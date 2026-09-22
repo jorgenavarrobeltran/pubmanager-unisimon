@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, u
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type Role = 'admin' | 'director' | 'editor_revista' | 'editor_libros' | 'coord_libros' | 'asistente';
+type Role = 'admin' | 'director' | 'editor_revista' | 'editor_libros' | 'coord_libros' | 'mentor' | 'asistente' | 'coord_proyectos';
 
 interface UserProfile {
   id: string;
@@ -21,32 +21,42 @@ const ACCESS_MATRIX: Record<Role, Record<string, 'full' | 'read' | false>> = {
   admin: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: 'full',
     certificates: 'full', policies: 'full', 'editors-school': 'full',
-    reports: 'full', settings: 'full', team: 'full',
+    reports: 'full', settings: 'full', team: 'full', mentorias: 'full', apc: 'full',
   },
   director: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: 'full',
     certificates: 'full', policies: 'full', 'editors-school': 'full',
-    reports: 'full', settings: false, team: 'full',
+    reports: 'full', settings: false, team: 'full', mentorias: 'full', apc: 'full',
   },
   editor_revista: {
     dashboard: 'full', planner: 'full', journals: 'full', books: false, finances: false,
     certificates: 'full', policies: 'read', 'editors-school': 'full',
-    reports: 'read', settings: false, team: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
   },
   editor_libros: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: false,
     certificates: 'full', policies: 'read', 'editors-school': 'full',
-    reports: 'read', settings: false, team: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
   },
   coord_libros: {
     dashboard: 'full', planner: 'full', journals: false, books: 'full', finances: false,
     certificates: 'full', policies: 'read', 'editors-school': false,
-    reports: 'read', settings: false, team: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
+  },
+  mentor: {
+    dashboard: 'read', planner: false, journals: false, books: false, finances: false,
+    certificates: false, policies: false, 'editors-school': false,
+    reports: false, settings: false, team: 'read', mentorias: 'full', apc: 'read',
   },
   asistente: {
     dashboard: 'read', planner: 'read', journals: 'read', books: 'read', finances: false,
     certificates: false, policies: 'read', 'editors-school': 'read',
-    reports: 'read', settings: false, team: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'read',
+  },
+  coord_proyectos: {
+    dashboard: 'read', planner: false, journals: false, books: false, finances: false,
+    certificates: false, policies: 'read', 'editors-school': false,
+    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'full',
   },
 };
 

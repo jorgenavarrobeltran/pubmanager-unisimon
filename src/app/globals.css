@@ -252,7 +252,26 @@ body {
 }
 
 .page-header {
-  padding: 24px 32px 0;
+  padding: 24px 32px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--gray-50);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* When header is inside a sticky toolbar (with tabs), let the parent handle sticky */
+.sticky-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--gray-50);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.sticky-toolbar .page-header {
+  position: static;
+  box-shadow: none;
 }
 
 .page-header h2 {

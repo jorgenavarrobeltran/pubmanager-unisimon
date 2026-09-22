@@ -4,8 +4,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Sparkles, X, Calendar, Send, Download, Copy, Check,
   BookOpen, Library, DollarSign, BarChart3, MessageSquare,
-  Loader2, FileText,
+  Loader2, FileText, GraduationCap, Award, Users, Receipt,
 } from 'lucide-react';
+import { exportReportToWord } from '@/lib/reportWordGenerator';
 
 /* ─── Types ─── */
 interface ReportType {
@@ -17,18 +18,24 @@ interface ReportType {
 }
 
 const REPORT_TYPES: ReportType[] = [
+  { key: 'apc', label: 'Informe de Pagos APC', icon: <Receipt size={20} />, description: 'Bolsa presupuestal anual, artículos APC financiados, cuartiles e investigadores líderes', color: '#09843B' },
   { key: 'books', label: 'Informe de Libros', icon: <Library size={20} />, description: 'Producción de libros, capítulos, autores, tipos y tendencias', color: '#1B5E20' },
   { key: 'journals', label: 'Informe de Revistas', icon: <BookOpen size={20} />, description: 'Estado de indexación, cuartiles Scopus, categorías Publindex', color: '#1565C0' },
+  { key: 'mentoring', label: 'Informe de Mentorías', icon: <GraduationCap size={20} />, description: 'Sesiones de acompañamiento por mentor, facultad y grupo', color: '#00695C' },
   { key: 'finances', label: 'Informe Financiero', icon: <DollarSign size={20} />, description: 'Balance de gastos por categoría y período', color: '#E65100' },
-  { key: 'executive', label: 'Informe Ejecutivo', icon: <BarChart3 size={20} />, description: 'Resumen holístico de toda la gestión editorial', color: '#6A1B9A' },
-  { key: 'custom', label: 'Análisis Personalizado', icon: <MessageSquare size={20} />, description: 'Escribe tu propia pregunta sobre los datos', color: '#00838F' },
+  { key: 'certificates', label: 'Informe de Certificados', icon: <Award size={20} />, description: 'Certificados emitidos por tipo, destinatario y período', color: '#4E342E' },
+  { key: 'team', label: 'Equipo Editorial', icon: <Users size={20} />, description: 'Composición de roles, editores de revistas y personal activo', color: '#00838F' },
+  { key: 'editors_school', label: 'Escuela de Editores', icon: <FileText size={20} />, description: 'Formación editorial: módulos, asistencia y evaluaciones', color: '#283593' },
+  { key: 'executive', label: 'Informe Ejecutivo', icon: <BarChart3 size={20} />, description: 'Resumen holístico integral de toda la gestión editorial', color: '#6A1B9A' },
+  { key: 'custom', label: 'Análisis Personalizado', icon: <MessageSquare size={20} />, description: 'Escribe tu propia pregunta sobre los datos', color: '#37474F' },
 ];
 
 const PERIOD_PRESETS = [
+  { label: '📅 Año en curso (2026)', years: 1 },
   { label: '3 años', years: 3 },
   { label: '5 años', years: 5 },
   { label: '10 años', years: 10 },
-  { label: 'Todo', years: 0 },
+  { label: 'Todo el histórico', years: 0 },
 ];
 
 const LENGTH_PRESETS = [
@@ -197,9 +204,24 @@ function renderMarkdown(md: string) {
 }
 
 /* ─── Main component ─── */
-export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface AIReportGeneratorProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialType?: string;
+  initialPeriodYears?: number;
+}
+
+export default function AIReportGenerator({ isOpen, onClose, initialType = 'books', initialPeriodYears = 1 }: AIReportGeneratorProps) {
   const currentYear = new Date().getFullYear();
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set(['books']));
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set([initialType]));
+  const [periodYears, setPeriodYears] = useState(initialPeriodYears);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialType) setSelectedTypes(new Set([initialType]));
+      if (initialPeriodYears !== undefined) setPeriodYears(initialPeriodYears);
+    }
+  }, [isOpen, initialType, initialPeriodYears]);
 
   const toggleType = (key: string) => {
     setSelectedTypes(prev => {
@@ -218,12 +240,12 @@ export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean
       return next;
     });
   };
-  const [periodYears, setPeriodYears] = useState(5);
   const [customPrompt, setCustomPrompt] = useState('');
   const [reportLength, setReportLength] = useState('executive');
   const [generating, setGenerating] = useState(false);
   const [report, setReport] = useState('');
   const [copied, setCopied] = useState(false);
+  const [exportingWord, setExportingWord] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -298,11 +320,14 @@ export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean
   const handleExportPDF = () => {
     const win = window.open('', '_blank');
     if (!win) return;
-    const type = REPORT_TYPES.find(t => selectedTypes.has(t.key as any));
+    const selectedList = REPORT_TYPES.filter(t => selectedTypes.has(t.key));
+    const title = selectedList.length === 1
+      ? selectedList[0].label
+      : (selectedTypes.has('executive') ? 'Informe Ejecutivo General' : `Informe Editorial`);
     win.document.write(`
       <!DOCTYPE html>
       <html><head>
-        <title>${type?.label || 'Informe'} - PubManager</title>
+        <title>${title} - PubManager</title>
         <style>
           body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 24px; color: #333; line-height: 1.7; font-size: 14px; }
           h1 { color: #1B5E20; border-bottom: 2px solid #1B5E20; padding-bottom: 8px; }
@@ -330,6 +355,29 @@ export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean
       </body></html>
     `);
     win.document.close();
+  };
+
+  const handleExportWord = async () => {
+    if (!report) return;
+    setExportingWord(true);
+    try {
+      const selectedList = REPORT_TYPES.filter(t => selectedTypes.has(t.key));
+      const title = selectedList.length === 1
+        ? selectedList[0].label
+        : (selectedTypes.has('executive') ? 'Informe Ejecutivo General' : `Informe Editorial`);
+
+      await exportReportToWord({
+        title,
+        reportMarkdown: report,
+        period: yearFrom === yearTo ? `Año ${yearTo} (en curso)` : `${yearFrom}–${yearTo}`,
+        fileName: `${title.replace(/\s+/g, '_')}_${yearFrom === yearTo ? yearTo : `${yearFrom}-${yearTo}`}.docx`,
+      });
+    } catch (err: any) {
+      console.error('Error al exportar Word:', err);
+      alert('Error al generar el archivo de Word: ' + (err.message || err));
+    } finally {
+      setExportingWord(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -462,8 +510,8 @@ export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean
                   </button>
                 ))}
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--gray-400)', marginTop: '6px' }}>
-                Analizando: <strong>{yearFrom}–{yearTo}</strong>
+              <div style={{ fontSize: '11px', color: 'var(--gray-500)', marginTop: '6px' }}>
+                Analizando: <strong>{yearFrom === yearTo ? `Año ${yearTo} (Vigencia en curso)` : `${yearFrom}–${yearTo}`}</strong>
               </div>
             </div>
 
@@ -578,6 +626,31 @@ export default function AIReportGenerator({ isOpen, onClose }: { isOpen: boolean
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button onClick={handleCopy} className="btn btn-ghost btn-sm" style={{ fontSize: '11px' }}>
                     {copied ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+                  </button>
+                  <button
+                    onClick={handleExportWord}
+                    disabled={exportingWord}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      fontSize: '11px',
+                      background: '#2B579A15',
+                      color: '#2B579A',
+                      borderColor: '#2B579A30',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontWeight: 600,
+                    }}
+                    title="Exportar informe editable en formato Microsoft Word (.docx)"
+                  >
+                    {exportingWord ? (
+                      <><Loader2 size={12} className="spin" /> Word...</>
+                    ) : (
+                      <>
+                        <FileText size={12} color="#2B579A" />
+                        Word (.docx)
+                      </>
+                    )}
                   </button>
                   <button onClick={handleExportPDF} className="btn btn-secondary btn-sm" style={{ fontSize: '11px' }}>
                     <Download size={12} /> PDF

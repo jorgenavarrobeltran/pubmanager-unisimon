@@ -280,8 +280,9 @@ export default function FinancesPage() {
             return (
               <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
                 padding: '10px 16px', fontSize: '13px', fontWeight: 600,
-                background: 'none', border: 'none', cursor: 'pointer',
+                background: 'none', cursor: 'pointer',
                 color: activeTab === t.key ? 'var(--primary)' : 'var(--gray-400)',
+                borderTop: 'none', borderLeft: 'none', borderRight: 'none',
                 borderBottom: activeTab === t.key ? '3px solid var(--primary)' : '3px solid transparent',
                 marginBottom: '-2px', transition: 'all 0.15s',
                 display: 'flex', alignItems: 'center', gap: '6px',

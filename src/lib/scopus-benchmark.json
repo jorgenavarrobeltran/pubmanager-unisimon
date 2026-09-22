@@ -1,0 +1,19 @@
+{
+  "query": "(AF-ID(\"Universidad Simón Bolívar\" 60106970) OR AF-ID(\"Universidad Simón Bolivar Cúcuta\" 60112687) AND PUBYEAR > 2019 AND PUBYEAR < 2027 AND ( LIMIT-TO ( DOCTYPE,\"ar\" ) OR LIMIT-TO ( DOCTYPE,\"re\" ) ) )",
+  "source": "Scopus-10-Analyze-Year.csv",
+  "institutions": [
+    "Universidad Simón Bolívar (AF-ID 60106970)",
+    "Universidad Simón Bolívar Cúcuta (AF-ID 60112687)"
+  ],
+  "documentTypes": ["Articles (ar)", "Reviews (re)"],
+  "yearlyScopusTotals": {
+    "2020": 226,
+    "2021": 165,
+    "2022": 161,
+    "2023": 169,
+    "2024": 204,
+    "2025": 258,
+    "2026": 212
+  },
+  "totalScopus2020_2026": 1395
+}

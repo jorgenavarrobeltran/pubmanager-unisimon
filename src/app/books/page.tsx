@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import {
   Library, Plus, Search, Trash2, BarChart3, List,
-  ChevronLeft, ChevronRight, Users,
+  ChevronLeft, ChevronRight, Users, ArrowUpDown, Calendar, Filter,
 } from 'lucide-react';
 import { BOOK_STAGES, BOOK_STATUSES, BOOK_TYPES, EDITION_TYPES } from '@/lib/constants';
 import BookForm from '@/components/BookForm';
@@ -32,7 +32,11 @@ interface Book {
   num_authors: number | null;
   num_chapters: number | null;
   faculty_name?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
+
+type SortOption = 'recent' | 'year_desc' | 'year_asc' | 'title_asc' | 'title_desc' | 'authors_desc' | 'chapters_desc';
 
 const PAGE_SIZE = 30;
 
@@ -51,12 +55,14 @@ export default function BooksPage() {
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<'catalog' | 'stats'>('catalog');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [yearFilter, setYearFilter] = useState<string>('all');
 
   const loadBooks = useCallback(async () => {
     const supabase = createClient();
     // Fetch books (under 1000 so default limit is fine)
-    const booksRes = await supabase.from('books').select('*, faculties(name)')
-      .order('year_published', { ascending: false, nullsFirst: false });
+    const booksRes = await supabase.from('books').select('*, faculties(name), created_at, updated_at')
+      .order('created_at', { ascending: false, nullsFirst: false });
 
     // Fetch all chapters (may exceed 1000)
     const allChapters: { id: string; book_id: string }[] = [];
@@ -133,6 +139,9 @@ export default function BooksPage() {
     }
   }
 
+  // Get unique years for the year filter
+  const availableYears = [...new Set(books.map(b => b.year_published).filter(Boolean) as number[])].sort((a, b) => b - a);
+
   const filtered = books.filter(b => {
     const q = search.toLowerCase();
     if (search) {
@@ -145,14 +154,37 @@ export default function BooksPage() {
     if (statusFilter !== 'all' && b.status !== statusFilter) return false;
     if (stageFilter !== 'all' && b.current_stage !== stageFilter) return false;
     if (typeFilter !== 'all' && b.book_type !== typeFilter) return false;
+    if (yearFilter !== 'all' && b.year_published?.toString() !== yearFilter) return false;
     return true;
   });
 
-  // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, stageFilter, typeFilter]);
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return (b.created_at || '').localeCompare(a.created_at || '');
+      case 'year_desc':
+        return (b.year_published || 0) - (a.year_published || 0);
+      case 'year_asc':
+        return (a.year_published || 0) - (b.year_published || 0);
+      case 'title_asc':
+        return a.title.localeCompare(b.title, 'es');
+      case 'title_desc':
+        return b.title.localeCompare(a.title, 'es');
+      case 'authors_desc':
+        return (bookAuthorsMap.get(b.id)?.length || 0) - (bookAuthorsMap.get(a.id)?.length || 0);
+      case 'chapters_desc':
+        return (b.num_chapters || 0) - (a.num_chapters || 0);
+      default:
+        return 0;
+    }
+  });
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // Reset page when filters/sort change
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, stageFilter, typeFilter, yearFilter, sortBy]);
+
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const stageConfig = (key: string) => BOOK_STAGES.find(s => s.key === key);
   const statusConfig = (key: string) => BOOK_STATUSES.find(s => s.key === key);
@@ -183,6 +215,7 @@ export default function BooksPage() {
 
   return (
     <>
+      <div className="sticky-toolbar">
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div>
@@ -200,16 +233,16 @@ export default function BooksPage() {
       {/* Tab bar */}
       <div style={{
         display: 'flex', gap: '0', borderBottom: '2px solid var(--gray-200)',
-        margin: '0 24px', position: 'sticky', top: 0, zIndex: 10,
-        background: 'var(--background)',
+        margin: '0 24px',
       }}>
         <button
           onClick={() => setActiveTab('catalog')}
           style={{
             padding: '12px 24px', fontSize: '13px', fontWeight: 600,
             color: activeTab === 'catalog' ? 'var(--primary)' : 'var(--gray-500)',
+            borderTop: 'none', borderLeft: 'none', borderRight: 'none',
             borderBottom: activeTab === 'catalog' ? '2px solid var(--primary)' : '2px solid transparent',
-            background: 'none', border: 'none', cursor: 'pointer',
+            background: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '8px',
             marginBottom: '-2px', transition: 'all 0.2s',
           }}
@@ -221,14 +254,16 @@ export default function BooksPage() {
           style={{
             padding: '12px 24px', fontSize: '13px', fontWeight: 600,
             color: activeTab === 'stats' ? 'var(--primary)' : 'var(--gray-500)',
+            borderTop: 'none', borderLeft: 'none', borderRight: 'none',
             borderBottom: activeTab === 'stats' ? '2px solid var(--primary)' : '2px solid transparent',
-            background: 'none', border: 'none', cursor: 'pointer',
+            background: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '8px',
             marginBottom: '-2px', transition: 'all 0.2s',
           }}
         >
           <BarChart3 size={16} /> Estadísticas
         </button>
+      </div>
       </div>
 
       <div className="page-content">
@@ -282,52 +317,112 @@ export default function BooksPage() {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center gap-3 mb-6" style={{ flexWrap: 'wrap' }}>
-              <div className="search-bar" style={{ flex: 1, maxWidth: '400px' }}>
-                <Search size={18} className="search-icon" />
-                <input type="text" placeholder="Buscar por título, ISBN o autor..." value={search} onChange={e => setSearch(e.target.value)} />
+            {/* Filters & Sort */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              {/* Row 1: Search + Status buttons */}
+              <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
+                <div className="search-bar" style={{ flex: 1, maxWidth: '400px' }}>
+                  <Search size={18} className="search-icon" />
+                  <input type="text" placeholder="Buscar por título, ISBN o autor..." value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
+                <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+                  {['all', ...BOOK_STATUSES.map(s => s.key)].map(s => {
+                    const count = s === 'all' ? books.length : books.filter(b => b.status === s).length;
+                    if (s !== 'all' && count === 0) return null;
+                    const label = s === 'all' ? `Todos (${count})` : `${statusConfig(s)?.label} (${count})`;
+                    return (
+                      <button key={s} className={`btn btn-sm ${statusFilter === s ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setStatusFilter(s)}
+                        style={s !== 'all' && statusFilter === s ? { background: statusConfig(s)?.color } : {}}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
-                {['all', ...BOOK_STATUSES.map(s => s.key)].map(s => {
-                  const count = s === 'all' ? books.length : books.filter(b => b.status === s).length;
-                  if (s !== 'all' && count === 0) return null;
-                  const label = s === 'all' ? `Todos (${count})` : `${statusConfig(s)?.label} (${count})`;
-                  return (
-                    <button key={s} className={`btn btn-sm ${statusFilter === s ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setStatusFilter(s)}
-                      style={s !== 'all' && statusFilter === s ? { background: statusConfig(s)?.color } : {}}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+
+              {/* Row 2: Filters + Sort */}
+              <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gray-500)', fontSize: '12px' }}>
+                  <Filter size={14} />
+                  <span style={{ fontWeight: 600 }}>Filtros:</span>
+                </div>
+                <select
+                  value={typeFilter}
+                  onChange={e => setTypeFilter(e.target.value)}
+                  style={{
+                    padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)',
+                    fontSize: '12px', color: typeFilter !== 'all' ? 'var(--primary)' : 'var(--gray-700)',
+                    background: typeFilter !== 'all' ? 'var(--primary-light, #e8f5e9)' : 'var(--card-bg)',
+                    cursor: 'pointer', fontWeight: typeFilter !== 'all' ? 600 : 400,
+                  }}
+                >
+                  <option value="all">Todos los tipos</option>
+                  {BOOK_TYPES.map(t => (
+                    <option key={t.key} value={t.key}>{t.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={yearFilter}
+                  onChange={e => setYearFilter(e.target.value)}
+                  style={{
+                    padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)',
+                    fontSize: '12px', color: yearFilter !== 'all' ? 'var(--primary)' : 'var(--gray-700)',
+                    background: yearFilter !== 'all' ? 'var(--primary-light, #e8f5e9)' : 'var(--card-bg)',
+                    cursor: 'pointer', fontWeight: yearFilter !== 'all' ? 600 : 400,
+                  }}
+                >
+                  <option value="all">Todos los años</option>
+                  {availableYears.map(y => (
+                    <option key={y} value={y.toString()}>{y}</option>
+                  ))}
+                </select>
+                {stageFilter !== 'all' && (
+                  <button className="btn btn-sm btn-ghost" onClick={() => setStageFilter('all')} style={{ color: 'var(--primary)' }}>
+                    ✕ Etapa: {stageConfig(stageFilter)?.label}
+                  </button>
+                )}
+
+                {/* Clear all filters */}
+                {(typeFilter !== 'all' || yearFilter !== 'all' || stageFilter !== 'all' || statusFilter !== 'all' || search) && (
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => { setTypeFilter('all'); setYearFilter('all'); setStageFilter('all'); setStatusFilter('all'); setSearch(''); }}
+                    style={{ color: 'var(--error)', fontSize: '11px' }}
+                  >
+                    ✕ Limpiar todo
+                  </button>
+                )}
+
+                {/* Sort - pushed to right */}
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ArrowUpDown size={14} color="var(--gray-500)" />
+                  <select
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as SortOption)}
+                    style={{
+                      padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)',
+                      fontSize: '12px', color: 'var(--gray-700)', background: 'var(--card-bg)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="recent">Más recientes</option>
+                    <option value="year_desc">Año publicación ↓</option>
+                    <option value="year_asc">Año publicación ↑</option>
+                    <option value="title_asc">Título A → Z</option>
+                    <option value="title_desc">Título Z → A</option>
+                    <option value="authors_desc">Más autores</option>
+                    <option value="chapters_desc">Más capítulos</option>
+                  </select>
+                </div>
               </div>
-              <select
-                value={typeFilter}
-                onChange={e => setTypeFilter(e.target.value)}
-                style={{
-                  padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)',
-                  fontSize: '12px', color: 'var(--gray-700)', background: 'var(--card-bg)',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all">Todos los tipos</option>
-                {BOOK_TYPES.map(t => (
-                  <option key={t.key} value={t.key}>{t.label}</option>
-                ))}
-              </select>
-              {stageFilter !== 'all' && (
-                <button className="btn btn-sm btn-ghost" onClick={() => setStageFilter('all')} style={{ color: 'var(--primary)' }}>
-                  ✕ Limpiar filtro de etapa
-                </button>
-              )}
             </div>
 
             {/* Books table */}
             <div className="card">
               <div className="card-body" style={{ padding: 0 }}>
-                {filtered.length === 0 ? (
+                {sorted.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-icon">📖</div>
                     <h3>{books.length === 0 ? 'Sin libros registrados' : 'Sin resultados'}</h3>

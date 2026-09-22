@@ -15,6 +15,7 @@ interface TeamMember {
   role: string;
   active: boolean;
   task_count?: number;
+  journals?: string[];
 }
 
 interface JournalEditor {
@@ -31,6 +32,7 @@ const ROLE_LABELS: Record<string, string> = {
   editor_revista: 'Editor de Revista',
   editor_libros: 'Editor + Libros',
   coord_libros: 'Coord. de Libros',
+  mentor: 'Mentor',
   asistente: 'Asistente',
 };
 
@@ -41,6 +43,7 @@ const ROLE_COLORS: Record<string, { bg: string, color: string }> = {
   editor_revista: { bg: '#E3F2FD', color: '#1565C0' },
   editor_libros: { bg: '#E0F2F1', color: '#00695C' },
   coord_libros: { bg: '#FFF3E0', color: '#E65100' },
+  mentor: { bg: '#E1F5FE', color: '#0277BD' },
   asistente: { bg: '#F5F5F5', color: '#616161' },
 };
 
@@ -92,7 +95,7 @@ function MemberCard({ member }: { member: TeamMember }) {
             </span>
           </div>
           
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
             <span className="badge" style={{ 
               background: ROLE_COLORS[member.role]?.bg || ROLE_COLORS.asistente.bg,
               color: ROLE_COLORS[member.role]?.color || ROLE_COLORS.asistente.color,
@@ -101,6 +104,18 @@ function MemberCard({ member }: { member: TeamMember }) {
             }}>
               {ROLE_LABELS[member.role] || member.role}
             </span>
+            {member.journals && member.journals.map(j => (
+              <span key={j} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                background: '#E8F5E9', color: '#2E7D32',
+                padding: '3px 10px', borderRadius: '20px',
+                fontSize: '10px', fontWeight: 600,
+                border: '1px solid #C8E6C9',
+              }}>
+                <BookOpen size={10} />
+                {j}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -227,10 +242,43 @@ export default function TeamPage() {
       return acc;
     }, {});
 
-    const enrichedMembers = profiles.map((p: any) => ({
-      ...p,
-      task_count: taskCounts[p.id] || 0
-    }));
+    // Build email -> journal names map AND name -> journal names map
+    const emailToJournals: Record<string, string[]> = {};
+    const nameToJournals: Record<string, string[]> = {};
+    (journalsRes.data || []).forEach((j: any) => {
+      if (j.editor_email) {
+        const email = j.editor_email.toLowerCase().trim();
+        if (!emailToJournals[email]) emailToJournals[email] = [];
+        emailToJournals[email].push(j.name);
+      }
+      if (j.editor_name) {
+        const name = j.editor_name.toLowerCase().trim();
+        if (!nameToJournals[name]) nameToJournals[name] = [];
+        nameToJournals[name].push(j.name);
+      }
+    });
+
+    // Co-editor assignments (team members who are co-editors of journals)
+    const coEditorMap: Record<string, string[]> = {
+      'alejandro.corrales@unisimon.edu.co': ['Investigación e Innovación en Ingenierías'],
+      'wendy.almendrales@unisimon.edu.co': ['Justicia'],
+      'yessica.munoz@unisimon.edu.co': ['Desarrollo Gerencial'],
+      'heidy.borja@unisimon.edu.co': ['Psicogente'],
+      'jair.padillag@unisimon.edu.co': ['Educación y Humanismo'],
+    };
+
+    const enrichedMembers = profiles.map((p: any) => {
+      const byEmail = emailToJournals[p.email?.toLowerCase()?.trim()] || [];
+      const byName = nameToJournals[p.full_name?.toLowerCase()?.trim()] || [];
+      const byCoEditor = coEditorMap[p.email?.toLowerCase()?.trim()] || [];
+      // Merge, removing duplicates
+      const allJournals = [...new Set([...byEmail, ...byName, ...byCoEditor])];
+      return {
+        ...p,
+        task_count: taskCounts[p.id] || 0,
+        journals: allJournals,
+      };
+    });
 
     // Build editor list from journals
     const journalEditors: JournalEditor[] = (journalsRes.data || [])
@@ -264,7 +312,12 @@ export default function TeamPage() {
   }
 
   const filteredMembers = members.filter(m => {
-    if (searchTerm && !m.full_name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      const matchesName = m.full_name.toLowerCase().includes(term);
+      const matchesJournal = m.journals?.some(j => j.toLowerCase().includes(term));
+      if (!matchesName && !matchesJournal) return false;
+    }
     if (roleFilter && m.role !== roleFilter) return false;
     return true;
   });
@@ -310,7 +363,12 @@ export default function TeamPage() {
 
   // We only include hardcoded leaders if there is no search filter or they match the search filter
   const filteredHardcoded = hardcodedLeaders.filter(m => {
-    if (searchTerm && !m.full_name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      const matchesName = m.full_name.toLowerCase().includes(term);
+      const matchesJournal = m.journals?.some(j => j.toLowerCase().includes(term));
+      if (!matchesName && !matchesJournal) return false;
+    }
     if (roleFilter && m.role !== roleFilter) return false;
     return true;
   });
@@ -364,7 +422,7 @@ export default function TeamPage() {
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Buscar por nombre..."
+              placeholder="Buscar por nombre o revista..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />

@@ -3,76 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Resultados Preliminares Publindex 2026 – Universidad Simón Bolívar</title>
+<title>Resultados Oficiales Publindex Convocatoria 977 – Universidad Simón Bolívar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+  :root {
+    /* Manual de Identidad e Imagen Unisimon */
+    --unisimon-green: #09843B; /* Color Oficial Verde Unisimon (CMYK: 86,22,97,7 / RGB: 9,132,59) */
+    --unisimon-green-dark: #055424;
+    --unisimon-green-light: #0cb853;
+    --unisimon-green-bg: #F2F9F4;
+    --unisimon-gold: #F0B323; /* Pantone 7408 PC */
+    --unisimon-gold-light: #FFF9E6;
+    --unisimon-accent-green: #37B34A; /* Pantone 361 PC */
+    --unisimon-gray-dark: #1E293B;
+    --unisimon-gray-med: #64748B;
+    --unisimon-gray-light: #F8FAFC;
+    --unisimon-border: #E2E8F0;
+    
+    /* Tipografías Oficiales */
+    --font-primary: 'Palatino Linotype', 'Palatino', Georgia, serif;
+    --font-secondary: 'Helvetica Neue', Helvetica, Arial, 'Inter', sans-serif;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'Inter', sans-serif;
-    background: #f0f2f5;
-    color: #1e293b;
+    font-family: var(--font-secondary);
+    background: #EBF1ED;
+    color: var(--unisimon-gray-dark);
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     padding: 40px 20px;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
 
   .container {
-    width: 900px;
+    width: 920px;
     max-width: 100%;
     background: #ffffff;
     border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(9, 132, 59, 0.12);
     overflow: hidden;
+    border: 1px solid rgba(9, 132, 59, 0.15);
   }
 
-  /* HEADER */
+  /* HEADER CON IDENTIDAD UNISIMON */
   .header {
     text-align: center;
-    padding: 36px 30px 28px;
-    background: linear-gradient(135deg, #0c2d5e 0%, #1a4a8a 50%, #0c2d5e 100%);
+    padding: 40px 30px 32px;
+    background: linear-gradient(135deg, var(--unisimon-green-dark) 0%, var(--unisimon-green) 60%, #086F32 100%);
     position: relative;
     overflow: hidden;
   }
+  
+  /* Banda superior dorada de resalte */
   .header::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, #c9a227, #f0d060, #c9a227);
+    height: 6px;
+    background: linear-gradient(90deg, #D4A017, var(--unisimon-gold), #F7D060, var(--unisimon-gold));
   }
-  .header .badge {
-    display: inline-block;
-    background: rgba(240, 208, 96, 0.15);
-    border: 1px solid rgba(240, 208, 96, 0.5);
-    color: #f0d060;
-    padding: 5px 18px;
-    border-radius: 30px;
-    font-size: 11px;
+
+  /* Marca de agua institucional sutil en el header */
+  .header::after {
+    content: 'UNISIMON';
+    position: absolute;
+    right: -20px;
+    bottom: -30px;
+    font-family: var(--font-primary);
+    font-size: 110px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.04);
+    letter-spacing: 6px;
+    pointer-events: none;
+  }
+
+  .header .institution-tag {
+    font-family: var(--font-primary);
+    text-transform: uppercase;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
+    color: #ffffff;
+    margin-bottom: 8px;
+    display: inline-block;
   }
+
+  .header .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(240, 179, 35, 0.2);
+    border: 1px solid var(--unisimon-gold);
+    color: #FFE699;
+    padding: 6px 20px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+  }
+
   .header h1 {
-    font-size: 30px;
+    font-family: var(--font-secondary);
+    font-size: 32px;
     font-weight: 900;
     color: #ffffff;
     margin-bottom: 6px;
     letter-spacing: -0.5px;
   }
-  .header h1 span { color: #f0d060; }
+  .header h1 span { color: var(--unisimon-gold); }
+
   .header h2 {
     font-size: 15px;
     font-weight: 500;
-    color: #b0c4de;
-    margin-bottom: 4px;
+    color: #E2F2E8;
+    margin-bottom: 8px;
   }
-  .header .institution {
+
+  .header .sub-details {
+    font-size: 12px;
+    color: #A3D9B5;
+    font-weight: 500;
+  }
+
+  /* OFFICIAL NOTIFICATION BANNER */
+  .notice-banner {
+    background: var(--unisimon-green-bg);
+    border-bottom: 1px solid #C8E6D2;
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .notice-icon {
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .notice-text {
     font-size: 13px;
-    color: #7a9ec5;
-    font-weight: 400;
+    color: var(--unisimon-green-dark);
+    line-height: 1.45;
+  }
+  .notice-text strong {
+    color: var(--unisimon-green);
   }
 
   /* SUMMARY CARDS */
@@ -80,16 +161,21 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--unisimon-border);
+    background: #ffffff;
   }
   .summary-card {
     text-align: center;
-    padding: 22px 12px;
-    border-right: 1px solid #e2e8f0;
+    padding: 24px 14px;
+    border-right: 1px solid var(--unisimon-border);
+    transition: background 0.2s ease;
+  }
+  .summary-card:hover {
+    background: var(--unisimon-green-bg);
   }
   .summary-card:last-child { border-right: none; }
   .summary-card .number {
-    font-size: 34px;
+    font-size: 36px;
     font-weight: 900;
     line-height: 1;
     margin-bottom: 4px;
@@ -99,31 +185,32 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #94a3b8;
+    color: var(--unisimon-gray-med);
   }
-  .summary-card.up .number { color: #16a34a; }
-  .summary-card.same .number { color: #d97706; }
-  .summary-card.down .number { color: #dc2626; }
-  .summary-card.scopus .number { color: #2563eb; }
+  .summary-card.up .number { color: var(--unisimon-green); }
+  .summary-card.same .number { color: #D97706; }
+  .summary-card.down .number { color: #DC2626; }
+  .summary-card.scopus .number { color: #1D70B8; }
 
-  /* TABLE */
+  /* TABLE SECTION */
   .table-wrapper {
     padding: 0;
+    background: #ffffff;
   }
   table {
     width: 100%;
     border-collapse: collapse;
   }
   thead th {
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 10px;
+    background: #F1F7F3;
+    color: var(--unisimon-green-dark);
+    font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    padding: 14px 16px;
+    letter-spacing: 1.2px;
+    padding: 16px;
     text-align: center;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #C8E6D2;
   }
   thead th:first-child {
     text-align: left;
@@ -132,21 +219,24 @@
   tbody td {
     padding: 20px 16px;
     text-align: center;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #F1F5F9;
     font-size: 14px;
     font-weight: 500;
     vertical-align: middle;
-    color: #475569;
+    color: var(--unisimon-gray-dark);
   }
   tbody td:first-child {
     text-align: left;
     padding-left: 28px;
     font-weight: 700;
-    font-size: 14px;
-    color: #0f172a;
+    font-size: 14.5px;
+    color: #0F172A;
+  }
+  tbody tr {
+    transition: background 0.15s ease;
   }
   tbody tr:hover {
-    background: #f8fafc;
+    background: #F8FAF8;
   }
   tbody tr:last-child td {
     border-bottom: none;
@@ -157,20 +247,28 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 10px;
     font-weight: 800;
-    font-size: 17px;
+    font-size: 18px;
   }
-  .cat-b { background: #eff6ff; color: #2563eb; border: 2px solid #93c5fd; }
-  .cat-c { background: #fffbeb; color: #d97706; border: 2px solid #fcd34d; }
+  .cat-b { 
+    background: #E8F5E9; 
+    color: var(--unisimon-green); 
+    border: 2px solid #81C784; 
+  }
+  .cat-c { 
+    background: #FFFBEB; 
+    color: #D97706; 
+    border: 2px solid #FCD34D; 
+  }
 
-  /* Trend arrows */
+  /* Trend badges */
   .trend {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 12px;
@@ -178,19 +276,19 @@
     white-space: nowrap;
   }
   .trend-up {
-    background: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
+    background: #E8F5E9;
+    color: var(--unisimon-green-dark);
+    border: 1px solid #A5D6A7;
   }
   .trend-same {
-    background: #fffbeb;
-    color: #d97706;
-    border: 1px solid #fde68a;
+    background: #FFFBEB;
+    color: #B45309;
+    border: 1px solid #FDE68A;
   }
   .trend-down {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
   }
 
   /* Scopus badge */
@@ -198,99 +296,114 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #f0fdf4;
-    color: #16a34a;
+    background: #EBF5FF;
+    color: #1D70B8;
     padding: 5px 12px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 800;
-    border: 1px solid #bbf7d0;
+    border: 1px solid #BFDBFE;
   }
   .scopus-no {
-    color: #cbd5e1;
+    color: #94A3B8;
     font-size: 13px;
     font-weight: 600;
   }
 
   .quartile {
     display: block;
-    font-size: 10px;
-    color: #94a3b8;
+    font-size: 10.5px;
+    color: var(--unisimon-gray-med);
     margin-top: 3px;
     font-weight: 600;
   }
 
-  /* HIGHLIGHT ROWS */
+  /* ROW HIGHLIGHTS */
   .row-highlight-up {
-    background: #f0fdf4;
+    background: #F4FBF6;
   }
   .row-highlight-up:hover {
-    background: #dcfce7 !important;
+    background: #E8F7EC !important;
   }
   .row-highlight-down {
-    background: #fef2f2;
-  }
-  .row-highlight-down:hover {
-    background: #fee2e2 !important;
+    background: #FFFDFD;
   }
 
-  /* Pending section */
+  /* PENDING / OTHER JOURNALS SECTION */
   .pending {
-    padding: 18px 28px;
-    border-top: 1px solid #e2e8f0;
+    padding: 22px 28px;
+    background: #FAFBFB;
+    border-top: 1px solid var(--unisimon-border);
   }
   .pending-title {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--unisimon-gray-med);
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
   .pending-list {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
   }
   .pending-item {
-    font-size: 12px;
-    color: #94a3b8;
-    background: #f8fafc;
-    padding: 6px 14px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    font-weight: 500;
+    font-size: 12.5px;
+    color: #475569;
+    background: #ffffff;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--unisimon-border);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
   }
 
-  /* FOOTER */
+  /* FOOTER WITH BRAND CREDENTIALS */
   .footer {
-    background: #f8fafc;
-    padding: 18px 28px;
-    border-top: 1px solid #e2e8f0;
+    background: var(--unisimon-green-dark);
+    color: #ffffff;
+    padding: 24px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
   }
-  .footer .source {
-    font-size: 10px;
-    color: #94a3b8;
+  .footer .brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
-  .footer .author {
-    font-size: 10px;
-    color: #64748b;
+  .footer .brand-title {
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--unisimon-gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .footer .brand-sub {
+    font-size: 11px;
+    color: #A3D9B5;
+  }
+  .footer .source-info {
+    font-size: 11px;
+    color: #D1E7DD;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .footer .author-info {
+    font-size: 11px;
+    color: #E2F2E8;
+    text-align: right;
     font-weight: 600;
   }
-  .footer .logo-text {
-    font-size: 11px;
-    font-weight: 800;
-    color: #c9a227;
-    letter-spacing: 1px;
-  }
 
-  /* Print styles */
+  /* Print and PDF optimization */
   @media print {
     body { background: white; padding: 0; }
-    .container { width: 100%; box-shadow: none; }
+    .container { width: 100%; box-shadow: none; border: none; }
   }
 </style>
 </head>
@@ -299,10 +412,21 @@
 <div class="container">
   <!-- HEADER -->
   <div class="header">
-    <div class="badge">Resultados Preliminares</div>
-    <h1>PUBLINDEX <span>2026</span></h1>
-    <h2>Convocatoria 977 – Clasificación de Revistas Científicas Nacionales</h2>
-    <div class="institution">Universidad Simón Bolívar · Dirección de Publicaciones</div>
+    <div class="institution-tag">Universidad Simón Bolívar</div>
+    <div>
+      <span class="badge">✓ Resultados Oficiales Definitivos</span>
+    </div>
+    <h1>PUBLINDEX <span>CONVOCATORIA 977</span></h1>
+    <h2>Clasificación Oficial e Indexación de Revistas Científicas Nacionales (2024–2026)</h2>
+    <div class="sub-details">Vicerrectoría de Investigaciones · Dirección de Publicaciones</div>
+  </div>
+
+  <!-- NOTICE BANNER -->
+  <div class="notice-banner">
+    <div class="notice-icon">📢</div>
+    <div class="notice-text">
+      <strong>Confirmación Oficial Minciencias:</strong> Se han publicado los resultados finales y definitivos de la Convocatoria 977 de Publindex. La categorización oficial de las revistas científicas de la Universidad Simón Bolívar se mantiene <strong>100% ratificada sin modificaciones</strong> frente a la lista preliminar.
+    </div>
   </div>
 
   <!-- SUMMARY CARDS -->
@@ -313,7 +437,7 @@
     </div>
     <div class="summary-card same">
       <div class="number">3</div>
-      <div class="label">Se mantienen →</div>
+      <div class="label">Se Mantienen →</div>
     </div>
     <div class="summary-card down">
       <div class="number">1</div>
@@ -330,12 +454,12 @@
     <table>
       <thead>
         <tr>
-          <th>Revista</th>
-          <th>Anterior (2022)</th>
-          <th>Publindex 2026</th>
+          <th>Revista Científica</th>
+          <th>Anterior (Conv. 910 - 2021)</th>
+          <th>Publindex 977</th>
           <th>Tendencia</th>
           <th>Scopus</th>
-          <th>Criterio</th>
+          <th>Criterio de Categorización</th>
         </tr>
       </thead>
       <tbody>
@@ -343,70 +467,70 @@
           <td>Justicia</td>
           <td><span class="cat cat-c">C</span></td>
           <td><span class="cat cat-b">B</span></td>
-          <td><span class="trend trend-up">▲ Subió</span></td>
+          <td><span class="trend trend-up">▲ Subió a B</span></td>
           <td>
             <span class="scopus-yes">✓ SCOPUS</span>
-            <span class="quartile">Q3 JCR</span>
+            <span class="quartile">Q2 SJR</span>
           </td>
-          <td style="font-size:11px; color:#64748b;">Cuartil 3<br>Journal Citation Reports</td>
+          <td style="font-size:11.5px; color:#475569;">Cuartil 2<br>SCImago Journal Rank (SJR)</td>
         </tr>
         <tr>
           <td>Educación y Humanismo</td>
           <td><span class="cat cat-b">B</span></td>
           <td><span class="cat cat-b">B</span></td>
-          <td><span class="trend trend-same">→ Igual</span></td>
+          <td><span class="trend trend-same">→ Se mantiene</span></td>
           <td>
             <span class="scopus-yes">✓ SCOPUS</span>
             <span class="quartile">Q3 SJR</span>
           </td>
-          <td style="font-size:11px; color:#64748b;">Cuartil 3<br>Scimago Journal Rank</td>
+          <td style="font-size:11.5px; color:#475569;">Cuartil 3<br>SCImago Journal Rank (SJR)</td>
         </tr>
         <tr>
-          <td>Investigación e Innovación<br>en Ingenierías</td>
+          <td>Investigación e Innovación en Ingenierías</td>
           <td><span class="cat cat-b">B</span></td>
           <td><span class="cat cat-b">B</span></td>
-          <td><span class="trend trend-same">→ Igual</span></td>
+          <td><span class="trend trend-same">→ Se mantiene</span></td>
           <td><span class="scopus-no">— No</span></td>
-          <td style="font-size:11px; color:#cbd5e1;">—</td>
+          <td style="font-size:11.5px; color:#94A3B8;">H5 e impacto de citas nacionales</td>
         </tr>
         <tr>
           <td>Desarrollo Gerencial</td>
           <td><span class="cat cat-b">B</span></td>
           <td><span class="cat cat-b">B</span></td>
-          <td><span class="trend trend-same">→ Igual</span></td>
+          <td><span class="trend trend-same">→ Se mantiene</span></td>
           <td><span class="scopus-no">— No</span></td>
-          <td style="font-size:11px; color:#cbd5e1;">—</td>
+          <td style="font-size:11.5px; color:#94A3B8;">H5 e impacto de citas nacionales</td>
         </tr>
         <tr class="row-highlight-down">
           <td>Psicogente</td>
           <td><span class="cat cat-b">B</span></td>
           <td><span class="cat cat-c">C</span></td>
-          <td><span class="trend trend-down">▼ Bajó</span></td>
+          <td><span class="trend trend-down">▼ Bajó a C</span></td>
           <td>
             <span class="scopus-yes">✓ SCOPUS</span>
             <span class="quartile">Q4 SJR</span>
           </td>
-          <td style="font-size:11px; color:#64748b;">Cuartil 4<br>Scimago Journal Rank</td>
+          <td style="font-size:11.5px; color:#475569;">Cuartil 4<br>SCImago Journal Rank (SJR)</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- PENDING -->
-  <div class="pending">
-    <div class="pending-title">Revistas pendientes de resultado (3)</div>
-    <div class="pending-list">
-      <span class="pending-item">Investigación y Desarrollo en TIC</span>
-      <span class="pending-item">Liderazgo Estratégico</span>
-      <span class="pending-item">Tejidos Sociales</span>
-    </div>
-  </div>
 
-  <!-- FOOTER -->
+  <!-- FOOTER CON CREDENCIALE INSTITUCIONALES -->
   <div class="footer">
-    <div class="source">Fuente: Minciencias – Resultados preliminares Convocatoria 977-2026</div>
-    <div class="logo-text">PUBMANAGER</div>
-    <div class="author">Elaboró: Jorge Navarro Beltrán · Junio 2026</div>
+    <div class="brand-col">
+      <div class="brand-title">Universidad Simón Bolívar</div>
+      <div class="brand-sub">Acreditada Institucionalmente de Alta Calidad · Res. 015867 MEN</div>
+    </div>
+    <div class="source-info">
+      <strong>Fuente Oficial:</strong> Minciencias – Convocatoria 977 de 2024<br>
+      Sistema Nacional de Indexación de Publicaciones Científicas (Publindex)
+    </div>
+    <div class="author-info">
+      Dirección de Publicaciones<br>
+      Jorge Navarro Beltrán · 2026
+    </div>
   </div>
 </div>
 

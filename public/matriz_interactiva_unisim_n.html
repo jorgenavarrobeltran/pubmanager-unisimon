@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz de Responsabilidades y Capacitaciones - Unisimón</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .card-enter {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom scrollbar for aesthetics */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-blue-900 text-white py-6 shadow-md border-b-4 border-red-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between">
+            <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                <div class="bg-white p-2 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-university text-blue-900 text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Vicerrectoría de Investigación</h1>
+                    <p class="text-blue-200 text-sm font-medium">Matriz de Responsabilidades y Capacitaciones de CTeI</p>
+                </div>
+            </div>
+            <div class="text-right hidden md:block">
+                <p class="text-xs text-blue-300 uppercase tracking-wider font-semibold">Modelo de Tipologías Minciencias</p>
+                <p class="text-sm font-medium">Esquema de Delegación</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Controles Interactivos -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                
+                <div class="flex-grow relative flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-search text-slate-400"></i>
+                        </div>
+                        <input type="text" id="searchInput" 
+                            class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" 
+                            placeholder="Buscar tema (ej. 'Apropiación', 'Scopus')...">
+                    </div>
+                    
+                    <select id="depFilter" class="block w-full md:w-64 pl-3 pr-8 py-2 border border-slate-300 rounded-lg leading-5 bg-slate-50 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors cursor-pointer text-slate-700 font-medium">
+                        <option value="all">Filtro: Todas las Dependencias</option>
+                        <optgroup label="Nuevo Conocimiento">
+                            <option value="publicaciones">Delegado a: Publicaciones</option>
+                        </optgroup>
+                        <optgroup label="Desarrollo e Innovación">
+                            <option value="propiedad_intelectual">Delegado a: Propiedad Intelectual</option>
+                            <option value="macondolab">Delegado a: MacondoLab</option>
+                        </optgroup>
+                        <optgroup label="Apropiación Social">
+                            <option value="ciiso">Delegado a: CIISO</option>
+                            <option value="extension">Delegado a: Extensión</option>
+                            <option value="comunicaciones">Delegado a: Comunicaciones</option>
+                        </optgroup>
+                        <optgroup label="Formación de Recurso">
+                            <option value="defi">Delegado a: DEFI (Posgrados y Semilleros)</option>
+                        </optgroup>
+                        <optgroup label="Soporte Transversal">
+                            <option value="biblioteca">Delegado a: Biblioteca</option>
+                            <option value="metrik">Delegado a: Metrik</option>
+                            <option value="internacionalizacion">Delegado a: Internacionalización</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-2 md:mt-0">
+                    <button onclick="filterBy('all')" id="btn-all" class="filter-btn px-4 py-2 bg-blue-100 text-blue-800 font-medium text-sm rounded-lg hover:bg-blue-200 transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500">
+                        Mostrar Todo
+                    </button>
+                    <button onclick="filterBy('publicaciones')" id="btn-pub" class="filter-btn px-4 py-2 bg-slate-100 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-200 transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-slate-500 border border-slate-200">
+                        <i class="fa-solid fa-book-open mr-1"></i> Nuevo Conocimiento (Mi Área)
+                    </button>
+                    <button onclick="filterBy('innovacion')" id="btn-inn" class="filter-btn px-4 py-2 bg-slate-100 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-200 transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-slate-500 border border-slate-200">
+                        <i class="fa-solid fa-lightbulb mr-1"></i> Solicitud Yani (DTI / ASC)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de la Matriz (Tarjetas) -->
+        <div id="matrixContainer" class="space-y-4">
+            <!-- El contenido dinámico se inyectará aquí -->
+        </div>
+
+        <!-- Estado Vacío (Búsqueda sin resultados) -->
+        <div id="emptyState" class="hidden text-center py-12">
+            <i class="fa-solid fa-folder-open text-slate-300 text-5xl mb-4"></i>
+            <h3 class="text-lg font-medium text-slate-900">No se encontraron resultados</h3>
+            <p class="text-slate-500 mt-1">Intenta buscar con otros términos como "Revistas", "Tecnología" o "Scopus".</p>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-sm mt-auto">
+        <p>Herramienta interactiva basada en el "Ciclo Integral para la Construcción de la Reputación Científica".</p>
+        <p class="mt-1">Diseñada para clarificar rutas de soporte a investigadores institucionales.</p>
+    </footer>
+
+    <script>
+        const data = [
+            {
+                id: 'publicaciones',
+                tipologia: 'Generación de Nuevo Conocimiento (GNC)',
+                dependencia: 'Jefatura de Publicaciones',
+                filterDep: 'publicaciones',
+                temas: [
+                    'Redacción de artículos científicos, libros y capítulos',
+                    'Traducción y revisión de artículos (Proveedor Enago)',
+                    'Calidad editorial, diagramación y gestión de ISBN/ISSN',
+                    'Revisión de similitud y originalidad (Antiplagio)',
+                    'Gestión y trámite de pago de APC (Article Processing Charge)'
+                ],
+                publico: ['Investigadores', 'Editores'],
+                icono: 'fa-book-open',
+                color: 'indigo',
+                destacado: true,
+                mensajeEsp: 'Esta es tu área. Garantizan la forma, rigor y calidad editorial del producto científico, y su correcto registro en plataformas Minciencias.'
+            },
+            {
+                id: 'propiedad_intelectual',
+                tipologia: 'Desarrollo Tecnológico e Innovación (DTI)',
+                dependencia: 'Dir. Propiedad Intelectual e Innovación',
+                filterDep: 'propiedad_intelectual',
+                temas: [
+                    'Derechos de autor y licencias Creative Commons',
+                    'Licenciamiento de productos',
+                    'Apoyo en solicitud de patentes y registro de software',
+                    'Certificación de productos de desarrollo tecnológico',
+                    '<strong class="text-amber-700">[ASC Minciencias]</strong> Generación de insumos para políticas públicas y normatividad'
+                ],
+                publico: ['Investigadores'],
+                icono: 'fa-scale-balanced',
+                color: 'amber',
+                destacado: true,
+                mensajeEsp: 'Soporte jurídico y protección patrimonial de las creaciones.'
+            },
+            {
+                id: 'macondolab',
+                tipologia: 'Desarrollo Tecnológico e Innovación (DTI)',
+                dependencia: 'MacondoLab',
+                filterDep: 'macondolab',
+                temas: [
+                    'Creación de Spin-offs y Startups',
+                    'Emprendimientos de base tecnológica',
+                    'Maduración y validación comercial de tecnologías (TRL)',
+                    'Transferencia de tecnologías',
+                    '<strong class="text-amber-700">[ASC Minciencias]</strong> Fortalecimiento de cadenas productivas (Encuentro academia - sector productivo)'
+                ],
+                publico: ['Investigadores', 'Emprendedores'],
+                icono: 'fa-rocket',
+                color: 'amber',
+                destacado: true,
+                mensajeEsp: 'Aceleración de negocios y transferencia tecnológica al mercado.'
+            },
+            {
+                id: 'ciiso',
+                tipologia: 'Apropiación Social del Conocimiento (ASC)',
+                dependencia: 'Centro de Innovación Social (CIISO)',
+                filterDep: 'ciiso',
+                temas: [
+                    '<strong class="text-amber-700">[ASC Minciencias]</strong> Trabajo conjunto entre Centros de Ciencia y grupos de investigación',
+                    'Proyectos colaborativos para propiciar el diálogo de saberes',
+                    'Talleres de cocreación social e innovación comunitaria'
+                ],
+                publico: ['Investigadores', 'Comunidad'],
+                icono: 'fa-users',
+                color: 'amber',
+                destacado: true,
+                mensajeEsp: 'Espacios de cocreación y diálogo de saberes desde el Centro de Ciencia.'
+            },
+            {
+                id: 'extension',
+                tipologia: 'Apropiación Social del Conocimiento (ASC)',
+                dependencia: 'Dirección de Extensión',
+                filterDep: 'extension',
+                temas: [
+                    '<strong class="text-amber-700">[ASC Minciencias]</strong> Procesos de ASC para la solución de asuntos de interés social',
+                    '<strong class="text-amber-700">[ASC Minciencias]</strong> Generación de insumos y evidencias científicas para política pública',
+                    'Interacción con comunidades para propuestas colectivas frente a problemáticas',
+                    'Proyección social y vinculación directa en territorio'
+                ],
+                publico: ['Investigadores', 'Sociedad Civil'],
+                icono: 'fa-handshake-angle',
+                color: 'amber',
+                destacado: true,
+                mensajeEsp: 'Lidera la interacción sistemática con el entorno y las políticas públicas.'
+            },
+            {
+                id: 'comunicaciones',
+                tipologia: 'Apropiación Social del Conocimiento (ASC)',
+                dependencia: 'Comunicaciones',
+                filterDep: 'comunicaciones',
+                temas: [
+                    'Estrategias de comunicación y divulgación científica',
+                    'Producción de cartillas, boletines y material multimedia',
+                    'Eventos científicos y manejo de redes sociales'
+                ],
+                publico: ['Investigadores', 'Comunicadores'],
+                icono: 'fa-bullhorn',
+                color: 'amber',
+                destacado: true
+            },
+            {
+                id: 'defi',
+                tipologia: 'Formación de Recurso Humano (FRH)',
+                dependencia: 'Dep. de Formación para la Investigación (DEFI)',
+                filterDep: 'defi',
+                temas: [
+                    'Lineamientos para la investigación formativa en pregrado',
+                    'Desarrollo y sistematización de Proyectos de Aula (individuales e integradores)',
+                    'Ruta de Cursos de Formación para la Investigación (Fases I, II y III)',
+                    'Desarrollo de competencias investigativas (pensamiento crítico y gestión del conocimiento)',
+                    'Gestión y proyectos de Semilleros de Investigación y Jóvenes Investigadores',
+                    'Dirección de Tesis (Doctorado y Maestría) y gestión de comités evaluadores'
+                ],
+                publico: ['Estudiantes Pregrado/Posgrado', 'Profesores Tutores'],
+                icono: 'fa-chalkboard-user',
+                color: 'blue'
+            },
+            {
+                id: 'biblioteca',
+                tipologia: 'Soporte Transversal',
+                dependencia: 'Biblioteca',
+                filterDep: 'biblioteca',
+                temas: [
+                    'Apoyo a la búsqueda de revistas indexadas de alto impacto',
+                    'Creación, actualización y estandarización de perfiles persistentes (ORCID, Google Académico)',
+                    'Apoyo a la visibilidad de productos en el Repositorio Institucional Bonga'
+                ],
+                publico: ['Investigadores', 'Estudiantes'],
+                icono: 'fa-book-atlas',
+                color: 'slate',
+                destacado: false,
+                mensajeEsp: 'Soporte en bases de datos y perfiles. No gestionan la publicación en sí.'
+            },
+            {
+                id: 'metrik',
+                tipologia: 'Soporte Transversal y Analítica',
+                dependencia: 'Metrik (Ing. Ivon)',
+                filterDep: 'metrik',
+                temas: [
+                    'Auditoría y análisis del modelo de medición Minciencias',
+                    'Manejo de indicadores, bibliometría y KPIs institucionales',
+                    'Proyección de categorización de grupos e investigadores',
+                    'Mentorías de facultad y registro de productos CvLAC / GrupLAC (Solicitud en Metrik)'
+                ],
+                publico: ['Investigadores', 'Directivos'],
+                icono: 'fa-chart-pie',
+                color: 'slate'
+            },
+            {
+                id: 'internacionalizacion',
+                tipologia: 'Soporte Transversal',
+                dependencia: 'Internacionalización',
+                filterDep: 'internacionalizacion',
+                temas: [
+                    'Redes de investigación internacionales',
+                    'Fomento y gestión de coautorías internacionales'
+                ],
+                publico: ['Investigadores'],
+                icono: 'fa-globe',
+                color: 'slate'
+            }
+        ];
+
+        const container = document.getElementById('matrixContainer');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const depFilter = document.getElementById('depFilter'); // Nuevo control
+
+        // Función para renderizar las insignias de público
+        function renderBadges(publicoArray) {
+            return publicoArray.map(p => 
+                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200 shadow-sm">
+                    ${p}
+                </span>`
+            ).join(' ');
+        }
+
+        // Función para renderizar la lista de temas
+        function renderTemas(temasArray, searchTerm) {
+            return temasArray.map(t => {
+                let text = t;
+                if (searchTerm) {
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    text = text.replace(regex, '<mark class="bg-yellow-200 text-yellow-900 rounded px-1">$1</mark>');
+                }
+                return `<li class="flex items-start text-sm text-slate-600 mb-1.5">
+                    <i class="fa-solid fa-check text-green-500 mt-1 mr-2 text-xs"></i> 
+                    <span>${text}</span>
+                </li>`;
+            }).join('');
+        }
+
+        // Función principal para dibujar las tarjetas
+        function renderMatrix(items, searchTerm = '') {
+            container.innerHTML = '';
+            
+            if (items.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            items.forEach((item, index) => {
+                // Definir estilos dinámicos basados en la configuración del item
+                let borderLeft = 'border-slate-300';
+                let bgHeader = 'bg-slate-50';
+                let iconColor = 'text-slate-500';
+                let badgeArea = '';
+
+                if (item.destacado) {
+                    if (item.color === 'indigo') {
+                        borderLeft = 'border-indigo-500 border-l-4';
+                        bgHeader = 'bg-indigo-50';
+                        iconColor = 'text-indigo-600';
+                        badgeArea = `<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200"><i class="fa-solid fa-star mr-1"></i> Tu Área</span>`;
+                    } else if (item.color === 'amber') {
+                        borderLeft = 'border-amber-500 border-l-4';
+                        bgHeader = 'bg-amber-50';
+                        iconColor = 'text-amber-600';
+                        badgeArea = `<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-bullseye mr-1"></i> Foco de Solicitud actual</span>`;
+                    }
+                } else {
+                    borderLeft = 'border-blue-300 border-l-4';
+                    iconColor = 'text-blue-500';
+                }
+
+                // Resaltar búsqueda en dependencia y fase
+                let depText = item.dependencia;
+                let faseText = item.tipologia;
+                if (searchTerm) {
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    depText = depText.replace(regex, '<mark class="bg-yellow-200 text-yellow-900 rounded px-1">$1</mark>');
+                    faseText = faseText.replace(regex, '<mark class="bg-yellow-200 text-yellow-900 rounded px-1">$1</mark>');
+                }
+
+                const cardHTML = `
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${borderLeft} card-enter hover:shadow-md transition-shadow duration-300" style="animation-delay: ${index * 0.05}s">
+                        <div class="${bgHeader} px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-200">
+                                    <i class="fa-solid ${item.icono} ${iconColor} text-lg"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center flex-wrap gap-2">
+                                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Tipología Minciencias</span>
+                                        <h2 class="text-lg font-bold text-slate-800">${faseText}</h2>
+                                    </div>
+                                    <div class="flex items-center mt-0.5">
+                                        <i class="fa-solid fa-sitemap text-slate-400 text-xs mr-1.5"></i>
+                                        <span class="text-sm text-slate-500 mr-1">Delegado a:</span>
+                                        <span class="text-sm font-semibold text-slate-700">${depText}</span>
+                                        ${badgeArea}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1 md:justify-end items-center max-w-xs">
+                                ${renderBadges(item.publico)}
+                            </div>
+                        </div>
+                        
+                        <div class="px-5 py-4 flex flex-col md:flex-row gap-6">
+                            <div class="flex-grow">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Temas de Capacitación y Mentoría</h3>
+                                <ul class="space-y-1">
+                                    ${renderTemas(item.temas, searchTerm)}
+                                </ul>
+                            </div>
+                            ${item.mensajeEsp ? `
+                                <div class="md:w-1/3 flex-shrink-0">
+                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200 text-sm text-slate-600 h-full flex flex-col justify-center border-l-2 ${item.color === 'indigo' ? 'border-l-indigo-400' : 'border-l-amber-400'}">
+                                        <p class="font-medium flex items-center">
+                                            <i class="fa-solid fa-circle-info mr-2 ${item.color === 'indigo' ? 'text-indigo-500' : 'text-amber-500'}"></i> Nota de Contexto
+                                        </p>
+                                        <p class="mt-1.5">${item.mensajeEsp}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        // Función para manejar los botones de filtro rápido
+        window.filterBy = function(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-100', 'text-blue-800');
+                btn.classList.add('bg-slate-100', 'text-slate-700');
+            });
+            
+            let btnId = 'btn-all';
+            if (type === 'publicaciones') btnId = 'btn-pub';
+            if (type === 'innovacion') btnId = 'btn-inn';
+            
+            const activeBtn = document.getElementById(btnId);
+            activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+            activeBtn.classList.add('bg-blue-100', 'text-blue-800');
+
+            // Limpiar buscador y el nuevo select si se usa un botón
+            searchInput.value = '';
+            depFilter.value = 'all';
+
+            // Filtrar datos
+            let filteredData = data;
+            if (type === 'publicaciones') {
+                filteredData = data.filter(d => d.id === 'publicaciones');
+            } else if (type === 'innovacion') {
+                filteredData = data.filter(d => ['propiedad_intelectual', 'macondolab', 'ciiso', 'extension', 'comunicaciones'].includes(d.id));
+            }
+
+            renderMatrix(filteredData);
+        };
+
+        function applyFilters() {
+            const term = searchInput.value.toLowerCase().trim();
+            const depVal = depFilter.value;
+
+            // Restablecer estilos de botones rápidos al usar filtros manuales
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-100', 'text-blue-800');
+                btn.classList.add('bg-slate-100', 'text-slate-700');
+            });
+            document.getElementById('btn-all').classList.add('bg-blue-100', 'text-blue-800');
+
+            let filteredData = data;
+
+            // 1. Aplicar el filtro del Menú Desplegable
+            if (depVal !== 'all') {
+                filteredData = filteredData.filter(d => d.filterDep === depVal);
+            }
+
+            // 2. Aplicar el filtro de Texto Libre
+            if (term !== '') {
+                filteredData = filteredData.filter(item => {
+                    const searchString = `
+                        ${item.tipologia.toLowerCase()} 
+                        ${item.dependencia.toLowerCase()} 
+                        ${item.temas.join(' ').toLowerCase()} 
+                        ${item.publico.join(' ').toLowerCase()}
+                    `;
+                    return searchString.includes(term);
+                });
+            }
+
+            renderMatrix(filteredData, term);
+        }
+
+        // Nuevos escuchadores de eventos combinados
+        searchInput.addEventListener('input', applyFilters);
+        depFilter.addEventListener('change', applyFilters);
+
+        // Inicializar renderizando todo
+        renderMatrix(data);
+    </script>
+</body>
+</html>

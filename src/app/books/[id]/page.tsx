@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Pencil, Trash2, UserPlus, ChevronRight, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, UserPlus, ChevronRight, GripVertical, ExternalLink } from 'lucide-react';
 import { BOOK_STAGES, BOOK_STATUSES, BOOK_TYPES, EDITION_TYPES } from '@/lib/constants';
 import BookForm from '@/components/BookForm';
 import ChapterForm from '@/components/ChapterForm';
@@ -44,6 +44,7 @@ export default function BookDetailPage() {
 
   const [showEditBook, setShowEditBook] = useState(false);
   const [showAddChapter, setShowAddChapter] = useState(false);
+  const [editChapter, setEditChapter] = useState<Chapter | null>(null);
   const [showAddAuthor, setShowAddAuthor] = useState(false);
   const [authorTarget, setAuthorTarget] = useState<{ type: 'book' | 'chapter'; id: string } | null>(null);
   const [deleteChapter, setDeleteChapter] = useState<Chapter | null>(null);
@@ -51,6 +52,8 @@ export default function BookDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const [chapterAuthors, setChapterAuthors] = useState<Record<string, Author[]>>({});
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -100,6 +103,47 @@ export default function BookDetailPage() {
     const { count } = await supabase.from('book_chapters').select('id', { count: 'exact', head: true }).eq('book_id', bookId);
     await supabase.from('books').update({ num_chapters: count }).eq('id', bookId);
     setDeleting(false); setDeleteChapter(null); loadData();
+  };
+
+  const saveChapterOrder = async (reordered: Chapter[]) => {
+    const supabase = createClient();
+    // Update all chapter_numbers in parallel
+    await Promise.all(
+      reordered.map((ch, i) =>
+        supabase.from('book_chapters').update({ chapter_number: i + 1 }).eq('id', ch.id)
+      )
+    );
+    loadData();
+  };
+
+  const handleDragStart = (idx: number) => {
+    setDragIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = (dropIdx: number) => {
+    if (dragIdx === null || dragIdx === dropIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const reordered = [...chapters];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(dropIdx, 0, moved);
+    // Optimistic update
+    setChapters(reordered);
+    setDragIdx(null);
+    setDragOverIdx(null);
+    saveChapterOrder(reordered);
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
   };
 
   const handleDeleteAuthor = async () => {
@@ -316,8 +360,20 @@ export default function BookDetailPage() {
               </div>
             ) : (
               <div>
-                {chapters.map(ch => (
-                  <div key={ch.id}>
+                {chapters.map((ch, idx) => (
+                  <div
+                    key={ch.id}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      opacity: dragIdx === idx ? 0.4 : 1,
+                      borderTop: dragOverIdx === idx && dragIdx !== null && dragIdx !== idx ? '3px solid var(--primary)' : 'none',
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
                     <div
                       style={{
                         display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
@@ -331,20 +387,34 @@ export default function BookDetailPage() {
                         if (newId) loadChapterAuthors(newId);
                       }}
                     >
+                      {/* Drag handle */}
+                      <div
+                        style={{
+                          cursor: 'grab', color: 'var(--gray-300)', display: 'flex',
+                          alignItems: 'center', padding: '4px 0',
+                        }}
+                        title="Arrastra para reordenar"
+                        onMouseDown={e => e.stopPropagation()}
+                      >
+                        <GripVertical size={16} />
+                      </div>
                       <ChevronRight size={16} style={{
                         color: 'var(--gray-400)',
                         transform: expandedChapter === ch.id ? 'rotate(90deg)' : 'none',
                         transition: 'transform 0.2s',
                       }} />
                       <span style={{ color: 'var(--gray-400)', fontSize: '13px', fontWeight: 600, minWidth: '40px' }}>
-                        {ch.chapter_number ? `Cap. ${ch.chapter_number}` : '—'}
+                        {idx + 1 !== (ch.chapter_number ?? idx + 1) ? `Cap. ${idx + 1}` : `Cap. ${ch.chapter_number ?? idx + 1}`}
                       </span>
                       <span style={{ fontWeight: 600, flex: 1 }}>{ch.title}</span>
                       {ch.isbn_digital && <span style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--gray-400)' }}>{ch.isbn_digital}</span>}
                       {ch.start_page && ch.end_page && (
                         <span style={{ fontSize: '11px', color: 'var(--gray-400)' }}>pp. {ch.start_page}-{ch.end_page}</span>
                       )}
-                      <button className="btn btn-ghost btn-icon" onClick={(e) => { e.stopPropagation(); setDeleteChapter(ch); }}>
+                      <button className="btn btn-ghost btn-icon" onClick={(e) => { e.stopPropagation(); setEditChapter(ch); }} title="Editar capítulo">
+                        <Pencil size={14} color="var(--gray-500)" />
+                      </button>
+                      <button className="btn btn-ghost btn-icon" onClick={(e) => { e.stopPropagation(); setDeleteChapter(ch); }} title="Eliminar capítulo">
                         <Trash2 size={14} color="var(--error)" />
                       </button>
                     </div>
@@ -393,7 +463,7 @@ export default function BookDetailPage() {
 
       {/* Modals */}
       <BookForm isOpen={showEditBook} onClose={() => setShowEditBook(false)} onSaved={loadData} book={book} />
-      <ChapterForm isOpen={showAddChapter} onClose={() => setShowAddChapter(false)} onSaved={loadData} bookId={bookId} />
+      <ChapterForm isOpen={showAddChapter || !!editChapter} onClose={() => { setShowAddChapter(false); setEditChapter(null); }} onSaved={loadData} bookId={bookId} chapter={editChapter} />
 
       {authorTarget && (
         <AuthorAssigner
@@ -402,6 +472,14 @@ export default function BookDetailPage() {
           onSaved={() => { loadData(); if (authorTarget.type === 'chapter') loadChapterAuthors(authorTarget.id); }}
           targetType={authorTarget.type}
           targetId={authorTarget.id}
+          bookId={bookId}
+          bookAuthors={authors.map(a => ({
+            person_id: a.person_id,
+            full_name: a.full_name,
+            cedula: a.cedula,
+            role: a.role,
+            institution: a.institution,
+          }))}
         />
       )}
 

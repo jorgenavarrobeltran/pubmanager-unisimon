@@ -162,23 +162,22 @@ export default function DashboardPage() {
       <div className="page-content">
         {/* Alert: Publindex results */}
         <div style={{
-          background: 'linear-gradient(135deg, #E3F2FD, #BBDEFB)',
+          background: 'linear-gradient(135deg, #E3F2FD, #E8F5E9)',
           borderRadius: 'var(--radius-lg)',
           padding: '16px 24px',
           display: 'flex',
           alignItems: 'center',
           gap: '16px',
           marginBottom: '24px',
-          border: '1px solid #90CAF9',
+          border: '1px solid #81C784',
         }}>
-          <span style={{ fontSize: '28px' }}>🔔</span>
+          <span style={{ fontSize: '28px' }}>🎉</span>
           <div>
-            <p style={{ fontWeight: 700, color: '#1565C0', fontSize: '14px' }}>
-              Resultados Preliminares Publindex 2026
+            <p style={{ fontWeight: 700, color: '#1B5E20', fontSize: '14px' }}>
+              Resultados Oficiales Publindex — Convocatoria 977
             </p>
-            <p style={{ fontSize: '13px', color: '#1976D2' }}>
-              Los resultados preliminares de la nueva categorización salen el 12 de junio de 2026.
-              Recuerda registrar los nuevos resultados cuando estén disponibles.
+            <p style={{ fontSize: '13px', color: '#2E7D32' }}>
+              Se han publicado los resultados finales de la Convocatoria 977 de Publindex. La categorización de las revistas se mantiene ratificada sin cambios frente a los preliminares.
             </p>
           </div>
           <Link href="/journals" className="btn btn-primary btn-sm" style={{ marginLeft: 'auto', flexShrink: 0 }}>

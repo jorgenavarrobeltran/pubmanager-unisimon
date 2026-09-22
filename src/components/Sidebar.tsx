@@ -16,6 +16,8 @@ import {
   LogOut,
   ChevronDown,
   Users,
+  Handshake,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
@@ -32,6 +34,8 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   BarChart3,
   Settings,
   Users,
+  Handshake,
+  Receipt,
 };
 
 // module key must match the key in AuthContext ACCESS_MATRIX
@@ -40,8 +44,10 @@ const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', href: '/', module: 'dashboard' },
   { key: 'planner', label: 'Planificador', icon: 'ClipboardList', href: '/planner', module: 'planner' },
   { section: 'Gestión Editorial' },
-  { key: 'journals', label: 'Revistas', icon: 'BookOpen', href: '/journals', badge: '8', module: 'journals' },
+  { key: 'journals', label: 'Revistas', icon: 'BookOpen', href: '/journals', module: 'journals' },
   { key: 'books', label: 'Libros', icon: 'Library', href: '/books', module: 'books' },
+  { key: 'apc', label: 'Pagos APC', icon: 'Receipt', href: '/apc', module: 'apc' },
+  { key: 'mentorias', label: 'Mentorías', icon: 'Handshake', href: '/mentorias', module: 'mentorias' },
   { key: 'editors-school', label: 'Escuela de Editores', icon: 'GraduationCap', href: '/editors-school', module: 'editors-school' },
   { key: 'team', label: 'Equipo', icon: 'Users', href: '/team', module: 'team' },
   { section: 'Administración' },
@@ -59,6 +65,8 @@ const ROLE_LABELS: Record<string, string> = {
   editor_revista: 'Editor de Revista',
   editor_libros: 'Editor + Libros',
   coord_libros: 'Coord. de Libros',
+  coord_proyectos: 'Coord. de Proyectos',
+  mentor: 'Mentor',
   asistente: 'Asistente',
 };
 
@@ -68,6 +76,8 @@ const ROLE_COLORS: Record<string, string> = {
   editor_revista: '#1565C0',
   editor_libros: '#00897B',
   coord_libros: '#F57C00',
+  coord_proyectos: '#00838F',
+  mentor: '#0277BD',
   asistente: '#78909C',
 };
 
@@ -131,8 +141,8 @@ export default function Sidebar() {
             >
               {Icon && <Icon size={20} />}
               <span>{item.label}</span>
-              {'badge' in item && item.badge && (
-                <span className="nav-badge">{item.badge}</span>
+              {'badge' in item && Boolean((item as any).badge) && (
+                <span className="nav-badge">{String((item as any).badge)}</span>
               )}
             </Link>
           );

@@ -1,17 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/Modal';
+
+interface ChapterData {
+  id: string;
+  title: string;
+  chapter_number: number | null;
+  isbn_digital: string | null;
+  isbn_print: string | null;
+  doi: string | null;
+  start_page: number | null;
+  end_page: number | null;
+  year: number | null;
+  notes?: string | null;
+}
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
   bookId: string;
+  chapter?: ChapterData | null;
 }
 
-export default function ChapterForm({ isOpen, onClose, onSaved, bookId }: Props) {
+export default function ChapterForm({ isOpen, onClose, onSaved, bookId, chapter }: Props) {
   const [title, setTitle] = useState('');
   const [chapterNumber, setChapterNumber] = useState<number | null>(null);
   const [isbnDigital, setIsbnDigital] = useState('');
@@ -24,13 +38,32 @@ export default function ChapterForm({ isOpen, onClose, onSaved, bookId }: Props)
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const isEditing = !!chapter;
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (chapter) {
+      setTitle(chapter.title || '');
+      setChapterNumber(chapter.chapter_number);
+      setIsbnDigital(chapter.isbn_digital || '');
+      setIsbnPrint(chapter.isbn_print || '');
+      setDoi(chapter.doi || '');
+      setStartPage(chapter.start_page);
+      setEndPage(chapter.end_page);
+      setYear(chapter.year);
+      setNotes(chapter.notes || '');
+    } else {
+      setTitle(''); setChapterNumber(null); setIsbnDigital(''); setIsbnPrint('');
+      setDoi(''); setStartPage(null); setEndPage(null); setYear(new Date().getFullYear()); setNotes('');
+    }
+  }, [chapter, isOpen]);
+
   const handleSubmit = async () => {
     if (!title.trim()) { setError('El título del capítulo es obligatorio'); return; }
     setSaving(true); setError('');
 
     const supabase = createClient();
-    const { error: err } = await supabase.from('book_chapters').insert({
-      book_id: bookId,
+    const payload = {
       title: title.trim(),
       chapter_number: chapterNumber,
       isbn_digital: isbnDigital || null,
@@ -40,25 +73,34 @@ export default function ChapterForm({ isOpen, onClose, onSaved, bookId }: Props)
       end_page: endPage,
       year,
       notes: notes || null,
-    });
+    };
+
+    let err;
+    if (isEditing) {
+      const result = await supabase.from('book_chapters').update(payload).eq('id', chapter.id);
+      err = result.error;
+    } else {
+      const result = await supabase.from('book_chapters').insert({ ...payload, book_id: bookId });
+      err = result.error;
+    }
 
     if (err) { setError(err.message); setSaving(false); return; }
 
-    // Update book chapter count
-    const { count } = await supabase.from('book_chapters').select('id', { count: 'exact', head: true }).eq('book_id', bookId);
-    await supabase.from('books').update({ num_chapters: count }).eq('id', bookId);
+    if (!isEditing) {
+      // Update book chapter count only on insert
+      const { count } = await supabase.from('book_chapters').select('id', { count: 'exact', head: true }).eq('book_id', bookId);
+      await supabase.from('books').update({ num_chapters: count }).eq('id', bookId);
+    }
 
-    setTitle(''); setChapterNumber(null); setIsbnDigital(''); setIsbnPrint('');
-    setDoi(''); setStartPage(null); setEndPage(null); setNotes('');
     setSaving(false); onSaved(); onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Agregar Capítulo" size="md"
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? 'Editar Capítulo' : 'Agregar Capítulo'} size="md"
       footer={<>
         <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>
-          {saving ? 'Guardando...' : 'Agregar Capítulo'}
+          {saving ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Agregar Capítulo'}
         </button>
       </>}
     >

@@ -200,8 +200,9 @@ export default function JournalDetailPage() {
             onClick={() => setMainTab('overview')}
             style={{
               padding: '10px 20px', fontSize: '14px', fontWeight: 600,
-              background: 'none', border: 'none', cursor: 'pointer',
+              background: 'none', cursor: 'pointer',
               color: mainTab === 'overview' ? 'var(--primary)' : 'var(--gray-400)',
+              borderTop: 'none', borderLeft: 'none', borderRight: 'none',
               borderBottom: mainTab === 'overview' ? '3px solid var(--primary)' : '3px solid transparent',
               marginBottom: '-2px', transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -213,8 +214,9 @@ export default function JournalDetailPage() {
             onClick={() => setMainTab('articles')}
             style={{
               padding: '10px 20px', fontSize: '14px', fontWeight: 600,
-              background: 'none', border: 'none', cursor: 'pointer',
+              background: 'none', cursor: 'pointer',
               color: mainTab === 'articles' ? 'var(--primary)' : 'var(--gray-400)',
+              borderTop: 'none', borderLeft: 'none', borderRight: 'none',
               borderBottom: mainTab === 'articles' ? '3px solid var(--primary)' : '3px solid transparent',
               marginBottom: '-2px', transition: 'all 0.15s',
               display: 'flex', alignItems: 'center', gap: '6px',
