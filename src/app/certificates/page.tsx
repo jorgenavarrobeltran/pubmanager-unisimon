@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Award, Plus, Search, Download, FileText, Calendar, Trash2, Eye, Filter, RefreshCw } from 'lucide-react';
+import { Award, Plus, Search, Download, FileText, Calendar, Trash2, Eye, Filter, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import CertificateForm from '@/components/CertificateForm';
+import FormsImportModal from '@/components/FormsImportModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { CATEGORY_LABELS, CATEGORY_COLORS, type CertificateCategory } from '@/lib/certificateTemplateMap';
 import { generateCertificate } from '@/lib/certificateGenerator';
@@ -32,6 +33,7 @@ export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showFormsImport, setShowFormsImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [stats, setStats] = useState<Record<string, number>>({});
@@ -111,9 +113,22 @@ export default function CertificatesPage() {
             <p>Generación y registro de certificados para libros, capítulos y evaluaciones</p>
           </div>
           {hasAccess('certificates') && (
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              <Plus size={18} /> Nuevo Certificado
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowFormsImport(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FileSpreadsheet size={18} color="#2E7D32" /> Importar de Forms
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowForm(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Plus size={18} /> Nuevo Certificado
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -287,6 +302,16 @@ export default function CertificatesPage() {
         <CertificateForm
           onClose={() => setShowForm(false)}
           onGenerated={() => { setShowForm(false); fetchCertificates(); }}
+        />
+      )}
+
+      {/* Microsoft Forms Import Modal */}
+      {showFormsImport && (
+        <FormsImportModal
+          onClose={() => setShowFormsImport(false)}
+          onImportComplete={() => {
+            fetchCertificates();
+          }}
         />
       )}
 
