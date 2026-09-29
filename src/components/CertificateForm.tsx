@@ -358,6 +358,20 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
         dataForTemplate.editores = formData.editores || '';
       }
 
+      // Smart formatting for external publisher certificates
+      if (!dataForTemplate.medio_divulgacion && dataForTemplate.enlace_repositorio) {
+        dataForTemplate.medio_divulgacion = dataForTemplate.enlace_repositorio;
+      }
+      if (!dataForTemplate.enlace_repositorio && dataForTemplate.medio_divulgacion) {
+        dataForTemplate.enlace_repositorio = dataForTemplate.medio_divulgacion;
+      }
+      // If city and month are missing, ensure clean publication date string
+      const ciudadPrefix = formData.ciudad ? `${formData.ciudad}, ` : '';
+      const mesPrefix = formData.mes_publicacion ? `${formData.mes_publicacion} de ` : '';
+      if (formData.anio_publicacion) {
+        dataForTemplate.fecha_lugar_publicacion = `${ciudadPrefix}${mesPrefix}${formData.anio_publicacion}`;
+      }
+
       const result = await generateCertificate(selectedTemplate.id, dataForTemplate);
       if (!result.success) {
         setError(result.error || 'Error al generar');
