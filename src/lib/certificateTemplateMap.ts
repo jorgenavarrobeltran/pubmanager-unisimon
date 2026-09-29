@@ -469,7 +469,6 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Certificado de libro resultado de investigación para editorial extranjera',
     templateFile: 'Certificado para EDITORIAL EXTRANJERA_libro.docx',
     fields: [
-      { key: 'institucion', label: 'Institución / Sello editorial', type: 'text', required: true, placeholder: 'Nombre de la institución o sello' },
       { key: 'libro_titulo', label: 'Título del libro', type: 'text', required: true, placeholder: 'Título del libro' },
       { key: 'autores', label: 'Autor(es)', type: 'textarea', required: true, placeholder: 'Nombres completos' },
       { key: 'editorial', label: 'Editorial', type: 'text', required: true, placeholder: 'Nombre de la editorial' },
@@ -486,7 +485,6 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     description: 'Certificado de capítulo en libro resultado de investigación para editorial extranjera',
     templateFile: 'Certificado para EDITORIAL EXTRANJERA_capítulo_libro.docx',
     fields: [
-      { key: 'institucion', label: 'Institución / Sello editorial', type: 'text', required: true, placeholder: 'Nombre de la institución o sello' },
       chapterField,
       { key: 'libro_titulo', label: 'Título del libro', type: 'text', required: true, placeholder: 'Título del libro' },
       { key: 'autores', label: 'Autor(es)', type: 'textarea', required: true, placeholder: 'Nombres completos' },
