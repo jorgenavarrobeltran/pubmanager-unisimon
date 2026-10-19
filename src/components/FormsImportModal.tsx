@@ -53,16 +53,9 @@ export default function FormsImportModal({ onClose, onImportComplete }: FormsImp
     setError('');
 
     try {
-      const res = await generateCertificate(row.targetTemplateId, row.formData);
-      if (!res.success) {
-        setError(`Error al generar para ${row.nombreCompleto}: ${res.error}`);
-        setGeneratingRowIdx(null);
-        return;
-      }
-
-      // Record in Supabase
+      // Record in Supabase first to obtain the unique consecutive number
       const titleRef = row.formData.libro_titulo || row.formData.capitulo_titulo || row.formData.titulo_obra || row.formData.titulo_publicacion || null;
-      await supabase.from('certificates').insert({
+      const { data: inserted, error: dbError } = await supabase.from('certificates').insert({
         certificate_type: row.targetTemplateId,
         recipient_name: row.nombreCompleto,
         recipient_cedula: row.numeroDocumento || null,
@@ -73,8 +66,23 @@ export default function FormsImportModal({ onClose, onImportComplete }: FormsImp
         editorial_type: row.formData.editorial?.toLowerCase().includes('unisimon') ? 'sello_propio' : 'editorial_extranjera',
         template_file: `${row.targetTemplateId}.docx`,
         generated_data: row.formData,
-        status: 'expedido',
-      });
+        requester_name: row.nombreCompleto || null,
+        requester_email: row.correo || null,
+        request_channel: 'formulario',
+        status: 'generado',
+      }).select('consecutive_number');
+
+      if (dbError) {
+        console.warn('Error saving to Supabase:', dbError);
+      }
+
+      const assignedConsecutive = inserted?.[0]?.consecutive_number;
+      const res = await generateCertificate(row.targetTemplateId, row.formData, assignedConsecutive);
+      if (!res.success) {
+        setError(`Error al generar para ${row.nombreCompleto}: ${res.error}`);
+        setGeneratingRowIdx(null);
+        return;
+      }
 
       setGeneratedIds(prev => [...prev, row.rowNumber]);
       onImportComplete();
@@ -222,7 +230,7 @@ export default function FormsImportModal({ onClose, onImportComplete }: FormsImp
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                             {isGenerated ? (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2E7D32', fontWeight: 600, fontSize: '11px' }}>
-                                <Check size={14} /> Expedido
+                                <Check size={14} /> Generado
                               </span>
                             ) : (
                               <button

@@ -18,6 +18,7 @@ import {
   Users,
   Handshake,
   Receipt,
+  Languages,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
@@ -36,6 +37,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   Users,
   Handshake,
   Receipt,
+  Languages,
 };
 
 // module key must match the key in AuthContext ACCESS_MATRIX
@@ -47,6 +49,7 @@ const NAV_ITEMS = [
   { key: 'journals', label: 'Revistas', icon: 'BookOpen', href: '/journals', module: 'journals' },
   { key: 'books', label: 'Libros', icon: 'Library', href: '/books', module: 'books' },
   { key: 'apc', label: 'Pagos APC', icon: 'Receipt', href: '/apc', module: 'apc' },
+  { key: 'traducciones', label: 'Traducciones', icon: 'Languages', href: '/traducciones', module: 'traducciones' },
   { key: 'mentorias', label: 'Mentorías', icon: 'Handshake', href: '/mentorias', module: 'mentorias' },
   { key: 'editors-school', label: 'Escuela de Editores', icon: 'GraduationCap', href: '/editors-school', module: 'editors-school' },
   { key: 'team', label: 'Equipo', icon: 'Users', href: '/team', module: 'team' },

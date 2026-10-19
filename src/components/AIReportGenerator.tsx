@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Sparkles, X, Calendar, Send, Download, Copy, Check,
   BookOpen, Library, DollarSign, BarChart3, MessageSquare,
-  Loader2, FileText, GraduationCap, Award, Users, Receipt,
+  Loader2, FileText, GraduationCap, Award, Users, Receipt, Languages,
 } from 'lucide-react';
 import { exportReportToWord } from '@/lib/reportWordGenerator';
 
@@ -19,6 +19,7 @@ interface ReportType {
 
 const REPORT_TYPES: ReportType[] = [
   { key: 'apc', label: 'Informe de Pagos APC', icon: <Receipt size={20} />, description: 'Bolsa presupuestal anual, artículos APC financiados, cuartiles e investigadores líderes', color: '#09843B' },
+  { key: 'translations', label: 'Informe de Traducciones', icon: <Languages size={20} />, description: 'Depósito prepagado ENAGO: saldo, cierre anual, servicios, investigadores y cuartiles (USD)', color: '#3730A3' },
   { key: 'books', label: 'Informe de Libros', icon: <Library size={20} />, description: 'Producción de libros, capítulos, autores, tipos y tendencias', color: '#1B5E20' },
   { key: 'journals', label: 'Informe de Revistas', icon: <BookOpen size={20} />, description: 'Estado de indexación, cuartiles Scopus, categorías Publindex', color: '#1565C0' },
   { key: 'mentoring', label: 'Informe de Mentorías', icon: <GraduationCap size={20} />, description: 'Sesiones de acompañamiento por mentor, facultad y grupo', color: '#00695C' },

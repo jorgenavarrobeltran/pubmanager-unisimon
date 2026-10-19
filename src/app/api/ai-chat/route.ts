@@ -428,10 +428,41 @@ const tools: any[] = [
           required: ['description', 'amount'],
         },
       },
+      {
+        name: 'web_search',
+        description: 'Buscar información externa en Google (noticias, normativas, datos públicos, info de autores o editoriales fuera del sistema).',
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            query: { type: Type.STRING, description: 'Consulta de búsqueda' },
+          },
+          required: ['query'],
+        },
+      },
     ],
   },
-  { googleSearch: {} },
 ];
+
+/* ─── Google Search (separate request: built-in tools can't be mixed with function calling) ─── */
+async function webSearch(query: string): Promise<any> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return { error: 'GEMINI_API_KEY no configurada' };
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: query }] }],
+      config: { tools: [{ googleSearch: {} }], temperature: 0.3, maxOutputTokens: 2048 },
+    });
+    const text = res.candidates?.[0]?.content?.parts?.filter((p: any) => p.text).map((p: any) => p.text).join('') || '';
+    const sources = res.candidates?.[0]?.groundingMetadata?.groundingChunks
+      ?.map((c: any) => ({ title: c.web?.title, url: c.web?.uri }))
+      .filter((s: any) => s.url) || [];
+    return { summary: text, sources };
+  } catch (err: any) {
+    return { error: err.message || 'Error en búsqueda web' };
+  }
+}
 
 /* ─── Execute tool call ─── */
 async function executeTool(supabase: any, name: string, args: any): Promise<any> {
@@ -443,6 +474,7 @@ async function executeTool(supabase: any, name: string, args: any): Promise<any>
     case 'query_authors': return queryAuthors(supabase, args);
     case 'query_chapters': return queryChapters(supabase, args);
     case 'get_general_stats': return getGeneralStats(supabase);
+    case 'web_search': return webSearch(args.query || '');
     // Write — these return proposed actions, not direct writes
     case 'create_book':
     case 'create_chapter':
@@ -562,6 +594,7 @@ export async function POST(req: NextRequest) {
 
     let pendingAction: any = null;
     let iterations = 0;
+    const webSources: { title?: string; url: string }[] = [];
 
     while (iterations < 3) {
       const candidate = response.candidates?.[0];
@@ -588,6 +621,7 @@ export async function POST(req: NextRequest) {
             },
           });
         } else {
+          if (toolName === 'web_search' && Array.isArray(result.sources)) webSources.push(...result.sources);
           functionResponses.push({ functionResponse: { name, response: result } });
         }
       }
@@ -609,12 +643,9 @@ export async function POST(req: NextRequest) {
       .map((p: any) => p.text)
       .join('') || 'No pude generar una respuesta.';
 
-    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-    const groundingChunks = groundingMetadata?.groundingChunks;
-
     return Response.json({
       response: finalText,
-      sources: groundingChunks?.map((c: any) => ({ title: c.web?.title, url: c.web?.uri })).filter((s: any) => s.url) || [],
+      sources: webSources,
       pendingAction: pendingAction || null,
     });
   } catch (err: any) {

@@ -49,6 +49,7 @@ export default function BookDetailPage() {
   const [authorTarget, setAuthorTarget] = useState<{ type: 'book' | 'chapter'; id: string } | null>(null);
   const [deleteChapter, setDeleteChapter] = useState<Chapter | null>(null);
   const [deleteAuthor, setDeleteAuthor] = useState<Author | null>(null);
+  const [deleteChapterAuthor, setDeleteChapterAuthor] = useState<{ author: Author; chapterId: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const [chapterAuthors, setChapterAuthors] = useState<Record<string, Author[]>>({});
@@ -77,8 +78,8 @@ export default function BookDetailPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const loadChapterAuthors = async (chapterId: string) => {
-    if (chapterAuthors[chapterId]) return;
+  const loadChapterAuthors = async (chapterId: string, force = false) => {
+    if (!force && chapterAuthors[chapterId]) return;
     const supabase = createClient();
     const { data } = await supabase.from('chapter_authors')
       .select('*, people(full_name, cedula, institution, email)')
@@ -102,7 +103,22 @@ export default function BookDetailPage() {
     await supabase.from('book_chapters').delete().eq('id', deleteChapter.id);
     const { count } = await supabase.from('book_chapters').select('id', { count: 'exact', head: true }).eq('book_id', bookId);
     await supabase.from('books').update({ num_chapters: count }).eq('id', bookId);
+    setChapterAuthors(prev => {
+      const next = { ...prev };
+      delete next[deleteChapter.id];
+      return next;
+    });
     setDeleting(false); setDeleteChapter(null); loadData();
+  };
+
+  const handleDeleteChapterAuthor = async () => {
+    if (!deleteChapterAuthor) return;
+    setDeleting(true);
+    const supabase = createClient();
+    await supabase.from('chapter_authors').delete().eq('id', deleteChapterAuthor.author.id);
+    await loadChapterAuthors(deleteChapterAuthor.chapterId, true);
+    setDeleting(false);
+    setDeleteChapterAuthor(null);
   };
 
   const saveChapterOrder = async (reordered: Chapter[]) => {
@@ -433,10 +449,23 @@ export default function BookDetailPage() {
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {chapterAuthors[ch.id].map(a => (
-                              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                                <span style={{ fontWeight: 500 }}>{a.full_name}</span>
-                                {a.cedula && <span style={{ fontSize: '11px', color: 'var(--gray-400)', fontFamily: 'monospace' }}>CC: {a.cedula}</span>}
-                                <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{a.role || 'autor'}</span>
+                              <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '13px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontWeight: 500 }}>{a.full_name}</span>
+                                  {a.cedula && <span style={{ fontSize: '11px', color: 'var(--gray-400)', fontFamily: 'monospace' }}>CC: {a.cedula}</span>}
+                                  <span className="badge badge-neutral" style={{ fontSize: '10px' }}>{a.role || 'autor'}</span>
+                                </div>
+                                <button
+                                  className="btn btn-ghost btn-icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteChapterAuthor({ author: a, chapterId: ch.id });
+                                  }}
+                                  title="Desasignar autor del capítulo"
+                                  style={{ padding: '2px', height: '24px', width: '24px' }}
+                                >
+                                  <Trash2 size={13} color="var(--error)" />
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -469,7 +498,14 @@ export default function BookDetailPage() {
         <AuthorAssigner
           isOpen={true}
           onClose={() => setAuthorTarget(null)}
-          onSaved={() => { loadData(); if (authorTarget.type === 'chapter') loadChapterAuthors(authorTarget.id); }}
+          onSaved={() => {
+            const target = authorTarget;
+            loadData();
+            if (target?.type === 'chapter') {
+              setExpandedChapter(target.id);
+              loadChapterAuthors(target.id, true);
+            }
+          }}
           targetType={authorTarget.type}
           targetId={authorTarget.id}
           bookId={bookId}
@@ -488,6 +524,9 @@ export default function BookDetailPage() {
 
       <ConfirmDialog isOpen={!!deleteAuthor} onClose={() => setDeleteAuthor(null)} onConfirm={handleDeleteAuthor} loading={deleting}
         title="Desasignar Autor" message={`¿Desasignar a "${deleteAuthor?.full_name}" de este libro?`} />
+
+      <ConfirmDialog isOpen={!!deleteChapterAuthor} onClose={() => setDeleteChapterAuthor(null)} onConfirm={handleDeleteChapterAuthor} loading={deleting}
+        title="Desasignar Autor del Capítulo" message={`¿Desasignar a "${deleteChapterAuthor?.author.full_name}" de este capítulo?`} />
     </>
   );
 }

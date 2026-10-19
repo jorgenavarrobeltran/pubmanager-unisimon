@@ -364,6 +364,9 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     templateFile: 'Aval_LIB_DIV.docx',
     fields: [
       ...commonBookFields,
+      { key: 'editores', label: 'Compilador(es) / Editor(es)', type: 'textarea', required: false, placeholder: 'Nombres si es obra compilatoria' },
+      { key: 'editorial', label: 'Nombre de la editorial', type: 'text', required: false, placeholder: 'Ediciones Universidad Simón Bolívar' },
+      { key: 'ciudad', label: 'Ciudad de publicación', type: 'text', required: false, placeholder: 'Barranquilla, Colombia' },
       { key: 'url_bonga', label: 'URL pública en repositorio Bonga', type: 'text', required: false, placeholder: 'https://bonga.unisimon.edu.co/handle/...' },
       ...publicationDateFields,
       ...expeditionDateFields
@@ -388,7 +391,12 @@ export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     templateFile: 'Aval-Capítulos_DIV.docx',
     fields: [
       { key: 'libro_titulo', label: 'Título del libro contenedor', type: 'text', required: true, placeholder: 'Título del libro' },
-      { key: 'isbn_digital', label: 'ISBN (digital o impreso)', type: 'text', required: false, placeholder: '978-...' },
+      { key: 'editores', label: 'Compilador(es) / Editor(es)', type: 'textarea', required: false, placeholder: 'Nombres de los compiladores o editores' },
+      { key: 'isbn_impreso', label: 'ISBN (impreso)', type: 'text', required: false, placeholder: '978-...' },
+      { key: 'isbn_digital', label: 'ISBN (digital)', type: 'text', required: false, placeholder: '978-...' },
+      { key: 'editorial', label: 'Nombre de la editorial', type: 'text', required: false, placeholder: 'Ediciones Universidad Simón Bolívar' },
+      { key: 'ciudad', label: 'Ciudad de publicación', type: 'text', required: false, placeholder: 'Barranquilla, Colombia' },
+      ...publicationDateFields,
       ...expeditionDateFields,
     ],
   },

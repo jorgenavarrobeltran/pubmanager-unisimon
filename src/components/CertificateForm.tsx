@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, FileText, Download, ChevronRight, ChevronLeft, Check, Loader2, BookOpen, Search, Newspaper, CheckSquare, Square } from 'lucide-react';
+import { X, FileText, Download, ChevronRight, ChevronLeft, Check, Loader2, BookOpen, Search, Newspaper, CheckSquare, Square, User, Mail, ClipboardList } from 'lucide-react';
 import {
   TEMPLATE_CONFIGS,
   CATEGORY_LABELS,
@@ -14,9 +14,24 @@ import {
 import { generateCertificate, getCertificatePreview } from '@/lib/certificateGenerator';
 import { createClient } from '@/lib/supabase/client';
 
+interface PrefillData {
+  solicitudId: string;
+  consecutive_number?: number;
+  recipientName: string;
+  titleReference: string;
+  description: string;
+  certificateType: string;
+  publicationType: string;
+  documentCategory?: CertificateCategory;
+  requesterName: string;
+  requesterEmail: string;
+  requestChannel: string;
+}
+
 interface CertificateFormProps {
   onClose: () => void;
   onGenerated: () => void;
+  prefillData?: PrefillData;
 }
 
 interface BookOption {
@@ -48,13 +63,25 @@ const MONTH_NAMES = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
 ];
 
-export default function CertificateForm({ onClose, onGenerated }: CertificateFormProps) {
+export default function CertificateForm({ onClose, onGenerated, prefillData }: CertificateFormProps) {
   const [step, setStep] = useState<Step>('category');
   const [selectedCategory, setSelectedCategory] = useState<CertificateCategory | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+
+  // Requester tracking (internal, not in certificate)
+  const [requesterName, setRequesterName] = useState(prefillData?.requesterName || '');
+  const [requesterEmail, setRequesterEmail] = useState(prefillData?.requesterEmail || '');
+  const [requestChannel, setRequestChannel] = useState<'correo' | 'formulario' | ''>(prefillData?.requestChannel as any || '');
+
+  // If prefillData has a category, start at category step with it pre-selected
+  useEffect(() => {
+    if (prefillData?.documentCategory) {
+      setSelectedCategory(prefillData.documentCategory);
+    }
+  }, [prefillData]);
 
   // Source selection: book vs journal
   const [sourceType, setSourceType] = useState<'book' | 'journal'>('book');
@@ -135,12 +162,17 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
         .eq('book_id', bookId)
         .order('author_order');
 
+      const isEditorOrCompiler = (role: string) => {
+        const r = (role || '').toLowerCase();
+        return r.includes('editor') || r.includes('compilad');
+      };
+
       const bookAuthors = (authorsData || [])
-        .filter((a: any) => !(a.role || '').toLowerCase().includes('editor'))
+        .filter((a: any) => !isEditorOrCompiler(a.role))
         .map((a: any) => (a as any).people?.full_name || 'Desconocido');
 
       const bookEditors = (authorsData || [])
-        .filter((a: any) => (a.role || '').toLowerCase().includes('editor'))
+        .filter((a: any) => isEditorOrCompiler(a.role))
         .map((a: any) => (a as any).people?.full_name || 'Desconocido');
 
       const { data: chaptersData } = await supabase
@@ -226,7 +258,8 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
       titulo_obra: detailed.title || '',
       titulo_publicacion: detailed.title || '',
       autores: detailed.authors.join(', '),
-      editores: detailed.editors.length > 0 ? detailed.editors.join(' y ') : '',
+      editores: detailed.editors.length > 0 ? detailed.editors.join(', ') : '',
+      compiladores: detailed.editors.length > 0 ? detailed.editors.join(', ') : '',
       isbn_impreso: detailed.isbn_print || '',
       isbn_digital: detailed.isbn_digital || '',
       isbn_deposito: detailed.isbn_digital || detailed.isbn_print || '',
@@ -372,18 +405,11 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
         dataForTemplate.fecha_lugar_publicacion = `${ciudadPrefix}${mesPrefix}${formData.anio_publicacion}`;
       }
 
-      const result = await generateCertificate(selectedTemplate.id, dataForTemplate);
-      if (!result.success) {
-        setError(result.error || 'Error al generar');
-        setGenerating(false);
-        return;
-      }
-
-      // Record certificate in database
+      // Record certificate in database first to get the unique consecutive number
       const recipient = formData.nombre_autor || formData.nombre_investigador || formData.autores || 'Sin destinatario';
       const titleRef = formData.libro_titulo || formData.capitulo_titulo || formData.titulo_obra || formData.titulo_publicacion || formData.titulo_boletin || null;
 
-      const { error: dbError } = await supabase.from('certificates').insert({
+      const certRecord = {
         certificate_type: selectedTemplate.id,
         recipient_name: recipient,
         recipient_cedula: formData.cedula || formData.numero_documento || null,
@@ -391,15 +417,48 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
         description: selectedTemplate.label,
         document_category: selectedTemplate.category,
         publication_type: formData.capitulo_titulo ? 'capitulo' : 'libro',
-        editorial_type: selectedTemplate.id.includes('extranjera') ? 'editorial_extranjera' : 
+        editorial_type: (selectedTemplate.category === 'certificado_editorial' || selectedTemplate.id.includes('extranjera') || selectedTemplate.id.includes('externa')) ? 'editorial_externa' : 
                         selectedTemplate.id.includes('divulgacion') ? 'divulgacion' : 'sello_propio',
         template_file: selectedTemplate.templateFile,
-        generated_data: formData,
-        status: 'expedido',
-      });
+        generated_data: dataForTemplate,
+        requester_name: requesterName || null,
+        requester_email: requesterEmail || null,
+        request_channel: requestChannel || null,
+        status: 'generado',
+      };
+
+      let assignedConsecutive: number | undefined = prefillData?.consecutive_number;
+      let dbError;
+
+      if (prefillData?.solicitudId) {
+        // Update existing solicitud instead of creating a new record
+        const { data: updated, error } = await supabase.from('certificates')
+          .update(certRecord)
+          .eq('id', prefillData.solicitudId)
+          .select('id, consecutive_number');
+        if (updated && updated.length > 0 && updated[0].consecutive_number) {
+          assignedConsecutive = updated[0].consecutive_number;
+        }
+        dbError = error;
+      } else {
+        const { data: inserted, error } = await supabase.from('certificates')
+          .insert(certRecord)
+          .select('id, consecutive_number');
+        if (inserted && inserted.length > 0 && inserted[0].consecutive_number) {
+          assignedConsecutive = inserted[0].consecutive_number;
+        }
+        dbError = error;
+      }
 
       if (dbError) {
         console.warn('Error saving certificate record to DB:', dbError);
+      }
+
+      const result = await generateCertificate(selectedTemplate.id, dataForTemplate, assignedConsecutive);
+      if (!result.success) {
+        setError(result.error || 'Error al generar el documento');
+        setGenerating(false);
+        return;
       }
 
       setGenerating(false);
@@ -837,6 +896,75 @@ export default function CertificateForm({ onClose, onGenerated }: CertificateFor
                     )}
                   </div>
                 ))}
+              </div>
+
+              {/* Requester Tracking (optional, internal) */}
+              <div style={{
+                marginTop: '8px', padding: '14px 16px', borderRadius: '10px',
+                background: '#FAFAFA', border: '1px solid #eee',
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#666', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <User size={14} color="#888" /> Control de solicitud <span style={{ fontSize: '10px', fontWeight: 400, color: '#aaa' }}>(opcional, uso interno)</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#555', marginBottom: '3px' }}>
+                      Profesor solicitante
+                    </label>
+                    <input
+                      type="text"
+                      value={requesterName}
+                      onChange={e => setRequesterName(e.target.value)}
+                      placeholder="Nombre del profesor"
+                      style={{
+                        width: '100%', padding: '8px 10px', borderRadius: '8px',
+                        border: '1px solid #ddd', fontSize: '12px', outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#555', marginBottom: '3px' }}>
+                      Correo del solicitante
+                    </label>
+                    <input
+                      type="email"
+                      value={requesterEmail}
+                      onChange={e => setRequesterEmail(e.target.value)}
+                      placeholder="correo@unisimon.edu.co"
+                      style={{
+                        width: '100%', padding: '8px 10px', borderRadius: '8px',
+                        border: '1px solid #ddd', fontSize: '12px', outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ marginTop: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#555', marginBottom: '3px' }}>
+                    Medio de solicitud
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {(['correo', 'formulario'] as const).map(ch => (
+                      <button
+                        key={ch}
+                        type="button"
+                        onClick={() => setRequestChannel(requestChannel === ch ? '' : ch)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                          padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                          border: requestChannel === ch ? '2px solid var(--primary)' : '1px solid #ddd',
+                          background: requestChannel === ch ? '#E8F5E9' : 'white',
+                          color: requestChannel === ch ? '#2E7D32' : '#666',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                      >
+                        {ch === 'correo' ? <Mail size={13} /> : <ClipboardList size={13} />}
+                        {ch === 'correo' ? 'Correo' : 'Formulario'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

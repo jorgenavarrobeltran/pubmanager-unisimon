@@ -16,7 +16,8 @@ import { getTemplateById, type TemplateConfig } from './certificateTemplateMap';
  */
 export async function generateCertificate(
   templateId: string,
-  data: Record<string, any>
+  data: Record<string, any>,
+  consecutiveNumber?: number | string
 ): Promise<{ success: boolean; fileName: string; error?: string }> {
   const template = getTemplateById(templateId);
   if (!template) {
@@ -61,11 +62,17 @@ export async function generateCertificate(
       compression: 'DEFLATE',
     });
 
-    // Build filename: Category-Type-Date.docx
+    // Build filename starting with certificate number: [Numero]-[Tipo]-[Destinatario]-[Fecha].docx
+    const certNum = consecutiveNumber ?? data.consecutive_number;
+    const numPrefix = certNum != null && certNum !== '' ? `${certNum}-` : '';
     const dateStr = new Date().toISOString().slice(0, 10);
     const cleanName = template.label.replace(/[^a-zA-ZáéíóúñÁÉÍÓÚÑ0-9\s]/g, '').replace(/\s+/g, '-');
-    const recipientName = (data.nombre_autor || data.autores || '').split(',')[0].trim().replace(/\s+/g, '-');
-    const fileName = `${cleanName}${recipientName ? '-' + recipientName : ''}-${dateStr}.docx`;
+    const recipientName = (data.nombre_autor || data.nombre_investigador || data.autores || '')
+      .split(',')[0]
+      .trim()
+      .replace(/[\n\r]+/g, '')
+      .replace(/\s+/g, '-');
+    const fileName = `${numPrefix}${cleanName}${recipientName ? '-' + recipientName : ''}-${dateStr}.docx`;
 
     // Trigger download
     saveAs(output, fileName);

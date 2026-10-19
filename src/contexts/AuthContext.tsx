@@ -21,42 +21,42 @@ const ACCESS_MATRIX: Record<Role, Record<string, 'full' | 'read' | false>> = {
   admin: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: 'full',
     certificates: 'full', policies: 'full', 'editors-school': 'full',
-    reports: 'full', settings: 'full', team: 'full', mentorias: 'full', apc: 'full',
+    reports: 'full', settings: 'full', team: 'full', mentorias: 'full', apc: 'full', traducciones: 'full',
   },
   director: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: 'full',
     certificates: 'full', policies: 'full', 'editors-school': 'full',
-    reports: 'full', settings: false, team: 'full', mentorias: 'full', apc: 'full',
+    reports: 'full', settings: false, team: 'full', mentorias: 'full', apc: 'full', traducciones: 'full',
   },
   editor_revista: {
     dashboard: 'full', planner: 'full', journals: 'full', books: false, finances: false,
     certificates: 'full', policies: 'read', 'editors-school': 'full',
-    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read', traducciones: 'read',
   },
   editor_libros: {
     dashboard: 'full', planner: 'full', journals: 'full', books: 'full', finances: false,
     certificates: 'full', policies: 'read', 'editors-school': 'full',
-    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read', traducciones: 'read',
   },
   coord_libros: {
     dashboard: 'full', planner: 'full', journals: false, books: 'full', finances: false,
     certificates: 'full', policies: 'read', 'editors-school': false,
-    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'full', apc: 'read', traducciones: 'read',
   },
   mentor: {
     dashboard: 'read', planner: false, journals: false, books: false, finances: false,
     certificates: false, policies: false, 'editors-school': false,
-    reports: false, settings: false, team: 'read', mentorias: 'full', apc: 'read',
+    reports: false, settings: false, team: 'read', mentorias: 'full', apc: 'read', traducciones: 'read',
   },
   asistente: {
     dashboard: 'read', planner: 'read', journals: 'read', books: 'read', finances: false,
     certificates: false, policies: 'read', 'editors-school': 'read',
-    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'read',
+    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'read', traducciones: 'read',
   },
   coord_proyectos: {
     dashboard: 'read', planner: false, journals: false, books: false, finances: false,
     certificates: false, policies: 'read', 'editors-school': false,
-    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'full',
+    reports: 'read', settings: false, team: 'read', mentorias: 'read', apc: 'full', traducciones: 'full',
   },
 };
 

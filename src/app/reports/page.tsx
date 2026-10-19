@@ -14,6 +14,12 @@ const REPORTS = [
     leader: 'Fernando Alberto Peñaranda',
   },
   {
+    icon: '🌐', title: 'Informe de Traducciones', aiType: 'translations',
+    desc: 'Control del depósito prepagado con ENAGO: saldo del paquete vigente, cierre anual, servicios descontados, costo por palabra, investigadores, facultades y cuartiles (USD).',
+    gradient: 'linear-gradient(135deg, #1E1B4B, #3730A3 55%, #0E7490)',
+    leader: 'Fernando Alberto Peñaranda',
+  },
+  {
     icon: '📚', title: 'Informe de Libros', aiType: 'books',
     desc: 'Producción de libros y capítulos por año, tipo, formato. Tendencias, comparaciones anuales y recomendaciones.',
     gradient: 'linear-gradient(135deg, #1B5E20, #2E7D32)',
@@ -186,7 +192,7 @@ export default function ReportsPage() {
                         <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gray-800)', margin: 0 }}>
                           {report.title}
                         </h3>
-                        {report.aiType === 'apc' && (
+                        {report.aiType === 'translations' && (
                           <span style={{ fontSize: '9px', fontWeight: 800, background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: '10px' }}>
                             NUEVO
                           </span>

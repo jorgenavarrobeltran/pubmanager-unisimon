@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "serve:web": "node scripts/serve-web.js"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",

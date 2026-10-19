@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import {
   Library, Plus, Search, Trash2, BarChart3, List,
-  ChevronLeft, ChevronRight, Users, ArrowUpDown, Calendar, Filter,
+  ChevronLeft, ChevronRight, Users, ArrowUpDown, Calendar, Filter, Download,
 } from 'lucide-react';
 import { BOOK_STAGES, BOOK_STATUSES, BOOK_TYPES, EDITION_TYPES } from '@/lib/constants';
 import BookForm from '@/components/BookForm';
@@ -223,6 +223,15 @@ export default function BooksPage() {
             <p>{books.length} libros · {books.filter(b => b.status === 'publicado').length} publicados · {books.filter(b => b.status === 'en_proceso').length} en proceso</p>
           </div>
           <div className="flex gap-2">
+            <a
+              href="/downloads/Base_de_Datos_Libros_Unisimon_Actualizada.xlsx"
+              download="Base_de_Datos_Libros_Unisimon_Actualizada.xlsx"
+              className="btn btn-secondary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+              title="Descargar base de datos completa de libros en Excel"
+            >
+              <Download size={18} /> Exportar Excel
+            </a>
             <button className="btn btn-primary" onClick={() => setShowForm(true)}>
               <Plus size={18} /> Nuevo Libro
             </button>

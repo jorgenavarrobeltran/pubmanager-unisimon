@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import initialAPCData from '@/lib/apc-initial-data.json';
 import scopusBenchmark from '@/lib/scopus-benchmark.json';
+import initialTranslationsData from '@/lib/translations-initial-data.json';
 
 /* ─── Helpers to paginate past 1000-row PostgREST limit ─── */
 async function fetchAll(supabase: any, table: string, select: string) {
@@ -240,6 +241,19 @@ async function getMentoringData(supabase: any, yearFrom: number, yearTo: number)
   };
 }
 
+const CERT_CATEGORY_LABELS: Record<string, string> = {
+  aval: 'Avales y Tipología',
+  creditos: 'Créditos y Financiación',
+  evaluacion: 'Evaluación por Pares',
+  erl: 'Edición Revistas/Libros (ERL)',
+  no_especializada: 'No Especializada (Cartillas/Manuales)',
+  formacion: 'Libros de Formación (LIB_FOR)',
+  manual_guia: 'Manuales y Guías (MAN_GUI)',
+  boletin: 'Boletines Divulgativos (BOL)',
+  certificado_editorial: 'Certificados Editorial Externa',
+  declaracion: 'Declaraciones de Autores',
+};
+
 async function getCertificatesData(supabase: any, yearFrom: number, yearTo: number) {
   const certs = await fetchAll(supabase, 'certificates', '*');
 
@@ -258,15 +272,27 @@ async function getCertificatesData(supabase: any, yearFrom: number, yearTo: numb
   const destinatariosUnicos = new Set<string>();
 
   for (const c of filtered) {
-    const cat = c.document_category || c.certificate_type || 'sin_categoria';
+    const rawCat = c.document_category || c.certificate_type || 'sin_categoria';
+    const cat = CERT_CATEGORY_LABELS[rawCat] || rawCat;
     porCategoria[cat] = (porCategoria[cat] || 0) + 1;
 
     if (c.publication_type) {
-      porTipoPub[c.publication_type] = (porTipoPub[c.publication_type] || 0) + 1;
+      const pubType = c.publication_type === 'capitulo' ? 'Capítulos' : c.publication_type === 'libro' ? 'Libros' : c.publication_type;
+      porTipoPub[pubType] = (porTipoPub[pubType] || 0) + 1;
     }
-    if (c.editorial_type) {
-      porTipoEditorial[c.editorial_type] = (porTipoEditorial[c.editorial_type] || 0) + 1;
-    }
+
+    const isExterna = c.document_category === 'certificado_editorial' ||
+      c.editorial_type === 'editorial_externa' ||
+      c.editorial_type === 'editorial_extranjera' ||
+      c.certificate_type?.includes('extranjera') ||
+      c.certificate_type?.includes('externa');
+
+    const edLabel = isExterna ? 'Editorial Externa' :
+      c.editorial_type === 'divulgacion' ? 'Divulgación' :
+      'Sello Propio (Ediciones Universidad Simón Bolívar)';
+
+    porTipoEditorial[edLabel] = (porTipoEditorial[edLabel] || 0) + 1;
+
     if (c.status) {
       porEstado[c.status] = (porEstado[c.status] || 0) + 1;
     }
@@ -285,16 +311,19 @@ async function getCertificatesData(supabase: any, yearFrom: number, yearTo: numb
       total_certificados_expedidos: filtered.length,
       destinatarios_unicos: destinatariosUnicos.size,
       categorias_activas: Object.keys(porCategoria).length,
+      certificados_editorial_externa: porTipoEditorial['Editorial Externa'] || 0,
+      certificados_sello_propio: porTipoEditorial['Sello Propio (Ediciones Universidad Simón Bolívar)'] || 0,
     },
     por_categoria: porCategoria,
     por_tipo_publicacion: porTipoPub,
     por_tipo_editorial: porTipoEditorial,
     por_estado: porEstado,
     por_año: porAño,
-    ultimos_expedidos: filtered.slice(0, 10).map((c: any) => ({
+    ultimos_expedidos: filtered.slice(0, 15).map((c: any) => ({
       consecutivo: c.consecutive_number,
       destinatario: c.recipient_name,
-      categoria: c.document_category,
+      categoria: CERT_CATEGORY_LABELS[c.document_category] || c.document_category,
+      editorial: c.generated_data?.editorial || (c.editorial_type === 'editorial_externa' ? 'Editorial Externa' : 'Ediciones Universidad Simón Bolívar'),
       referencia: c.title_reference,
       fecha: c.issue_date || c.created_at?.substring(0, 10),
     })),
@@ -550,6 +579,194 @@ async function getAPCData(supabase: any, yearFrom: number, yearTo: number) {
   };
 }
 
+/* ─── Traducciones (ENAGO, depósito prepagado) ─── */
+const trKey = (name: string) =>
+  name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\by equipo\b|\bequipo\b/g, '').replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/).filter(Boolean).sort().join(' ');
+
+async function getTranslationsData(supabase: any, yearFrom: number, yearTo: number) {
+  let orders: any[] = [];
+  let deposits: any[] = [];
+  let fuente = `Histórico ENAGO (${(initialTranslationsData as any).source_file || 'Excel'})`;
+  try {
+    const { data: oData } = await supabase.from('translation_orders').select('*');
+    if (oData && oData.length > 0) { orders = oData; fuente = 'Supabase (translation_orders)'; }
+    const { data: dData } = await supabase.from('translation_deposits').select('*');
+    if (dData && dData.length > 0) deposits = dData;
+  } catch (e) {
+    console.error('getTranslationsData supabase error:', e);
+  }
+  if (orders.length === 0) orders = (initialTranslationsData as any).orders || [];
+  if (deposits.length === 0) deposits = (initialTranslationsData as any).deposits || [];
+
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const fee = (o: any) => Number(o.fee_usd) || 0;
+  const dep = (d: any) => Number(d.received_usd) || 0;
+  const yearOf = (o: any) => o.year || (o.confirmed_on ? parseInt(String(o.confirmed_on).slice(0, 4), 10) : null);
+  deposits = [...deposits].sort((a, b) => String(a.deposit_date).localeCompare(String(b.deposit_date)));
+  const charged = orders.filter(o => o.charged_to_deposit && fee(o) > 0 && o.confirmed_on);
+
+  // Estado global del depósito (siempre a la fecha, el depósito es acumulativo)
+  const totalDep = deposits.reduce((a, d) => a + dep(d), 0);
+  const totalUsed = charged.reduce((a, o) => a + fee(o), 0);
+  const saldoActual = totalDep - totalUsed;
+  const last = deposits[deposits.length - 1];
+  let paqueteVigente: any = null;
+  if (last) {
+    const prev = deposits.slice(0, -1).reduce((a, d) => a + dep(d), 0);
+    const usedBefore = charged.filter(o => o.confirmed_on < last.deposit_date).reduce((a, o) => a + fee(o), 0);
+    const since = charged.filter(o => o.confirmed_on >= last.deposit_date);
+    const consumed = since.reduce((a, o) => a + fee(o), 0);
+    const carry = prev - usedBefore;
+    const months = Math.max(1, (Date.now() - new Date(`${last.deposit_date}T00:00:00`).getTime()) / (86400000 * 30.44));
+    const monthly = consumed / months;
+    const monthsLeft = monthly > 0 ? saldoActual / monthly : null;
+    paqueteVigente = {
+      fecha_compra: last.deposit_date,
+      valor_paquete_usd: r2(dep(last)),
+      saldo_arrastrado_paquete_anterior_usd: r2(carry),
+      nota_saldo_arrastrado: carry < 0
+        ? `Antes de esta compra se habían consumido USD ${r2(-carry)} por encima de lo prepagado; esa deuda se cubrió con este paquete.`
+        : 'Saldo a favor trasladado del paquete anterior.',
+      servicios_descontados_desde_compra: since.length,
+      consumido_desde_compra_usd: r2(consumed),
+      saldo_disponible_usd: r2(carry + dep(last) - consumed),
+      porcentaje_consumido: `${carry + dep(last) > 0 ? ((1 - (carry + dep(last) - consumed) / (carry + dep(last))) * 100).toFixed(1) : '100'}%`,
+      consumo_promedio_mensual_usd: r2(monthly),
+      meses_estimados_de_saldo: monthsLeft != null ? Number(monthsLeft.toFixed(1)) : null,
+      proyeccion_agotamiento: monthsLeft != null
+        ? new Date(Date.now() + monthsLeft * 30.44 * 86400000).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+        : null,
+    };
+  }
+
+  // Cierre anual del depósito (saldo inicial, recargas, consumo, saldo final)
+  const allYears = Array.from(new Set([
+    ...deposits.map(d => parseInt(String(d.deposit_date).slice(0, 4), 10)),
+    ...charged.map(o => parseInt(String(o.confirmed_on).slice(0, 4), 10)),
+  ])).sort((a, b) => a - b);
+  const nowY = new Date().getFullYear();
+  let running = 0;
+  const cierreAnual = allYears.map(y => {
+    const rec = deposits.filter(d => String(d.deposit_date).startsWith(String(y))).reduce((a, d) => a + dep(d), 0);
+    const os = charged.filter(o => String(o.confirmed_on).startsWith(String(y)));
+    const con = os.reduce((a, o) => a + fee(o), 0);
+    const opening = running;
+    running = opening + rec - con;
+    return {
+      año: y,
+      saldo_al_1_enero_usd: r2(opening),
+      recargas_usd: r2(rec),
+      consumido_usd: r2(con),
+      servicios_descontados: os.length,
+      saldo_al_cierre_usd: r2(running),
+      estado: y === nowY ? 'Año en curso (saldo a la fecha)' : running < 0 ? 'Cerró en NEGATIVO (consumo por encima de lo prepagado)' : 'Cerró con saldo a favor',
+    };
+  }).filter(r => r.año >= yearFrom && r.año <= yearTo);
+
+  // Encargos del período
+  const inRange = orders.filter(o => { const y = yearOf(o); return y != null && y >= yearFrom && y <= yearTo; });
+  const active = inRange.filter(o => o.status !== 'Cancelado');
+  const totalUSD = active.reduce((a, o) => a + fee(o), 0);
+  const words = active.reduce((a, o) => a + (Number(o.word_count) || 0), 0);
+  const priced = active.filter(o => fee(o) > 0 && o.word_count);
+  const pricedWords = priced.reduce((a, o) => a + Number(o.word_count), 0);
+  const pricedUSD = priced.reduce((a, o) => a + fee(o), 0);
+  const ta = active.filter(o => o.turnaround_days != null && o.turnaround_days >= 0 && o.turnaround_days < 120);
+
+  const group = (keyFn: (o: any) => string | null) => {
+    const m: Record<string, { nombre: string; encargos: number; valor_usd: number; palabras: number }> = {};
+    active.forEach(o => {
+      const k = keyFn(o); if (!k) return;
+      m[k] ??= { nombre: k, encargos: 0, valor_usd: 0, palabras: 0 };
+      m[k].encargos++; m[k].valor_usd += fee(o); m[k].palabras += Number(o.word_count) || 0;
+    });
+    return Object.values(m).map(x => ({ ...x, valor_usd: r2(x.valor_usd) })).sort((a, b) => b.encargos - a.encargos || b.valor_usd - a.valor_usd);
+  };
+
+  const porServicio = group(o => o.service).map(s => ({
+    servicio: s.nombre, encargos: s.encargos, valor_usd: s.valor_usd, palabras: s.palabras,
+    costo_por_palabra_usd: s.palabras ? Number((s.valor_usd / s.palabras).toFixed(4)) : null,
+    participacion_pct: `${active.length ? ((s.encargos / active.length) * 100).toFixed(1) : 0}%`,
+  }));
+  const porGestor = group(o => o.requested_by || 'Sin registrar').slice(0, 8)
+    .map(g => ({ gestor_solicitante: g.nombre, encargos: g.encargos, valor_usd: g.valor_usd }));
+
+  const resMap: Record<string, { investigador: string; encargos: number; valor_usd: number; q1_q2: number; facultad: string | null }> = {};
+  active.forEach(o => {
+    if (!o.researcher_team) return;
+    const k = trKey(o.researcher_team);
+    resMap[k] ??= { investigador: o.researcher_team, encargos: 0, valor_usd: 0, q1_q2: 0, facultad: null };
+    const m = resMap[k];
+    if (o.researcher_team.length > m.investigador.length) m.investigador = o.researcher_team;
+    m.encargos++; m.valor_usd += fee(o);
+    if (o.quartile === 'Q1' || o.quartile === 'Q2') m.q1_q2++;
+    if (!m.facultad && o.facultad) m.facultad = o.facultad;
+  });
+  const topInvestigadores = Object.values(resMap).sort((a, b) => b.encargos - a.encargos || b.valor_usd - a.valor_usd)
+    .slice(0, 10).map((r, i) => ({ ranking: i + 1, ...r, valor_usd: r2(r.valor_usd) }));
+
+  const enriched = active.filter(o => o.manuscript_title || o.researcher_team || o.journal);
+  const withQ = active.filter(o => o.quartile);
+  const porCuartil = ['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
+    const os = withQ.filter(o => o.quartile === q);
+    return { cuartil: q, articulos: os.length, valor_usd: r2(os.reduce((a, o) => a + fee(o), 0)) };
+  });
+  const porFacultad = group(o => o.facultad).map(f => ({ facultad: f.nombre, encargos: f.encargos, valor_usd: f.valor_usd }));
+  const topRevistas = group(o => o.journal).slice(0, 10).map(j => {
+    const q = active.find(o => o.journal === j.nombre && o.quartile)?.quartile || 'S/C';
+    return { revista: j.nombre, cuartil: q, articulos: j.encargos };
+  });
+  const porAño: Record<number, { año: number; encargos: number; valor_usd: number; palabras: number }> = {};
+  active.forEach(o => {
+    const y = yearOf(o) as number;
+    porAño[y] ??= { año: y, encargos: 0, valor_usd: 0, palabras: 0 };
+    porAño[y].encargos++; porAño[y].valor_usd += fee(o); porAño[y].palabras += Number(o.word_count) || 0;
+  });
+
+  return {
+    coordinador_modulo: 'Fernando Alberto Peñaranda (Coordinador de Proyectos - fernando.penaranda@unisimon.edu.co)',
+    proveedor: 'ENAGO (membresía UNISIL)',
+    modelo_de_contratacion: 'Paquetes PREPAGADOS en USD. La Universidad compra un paquete (depósito) y cada servicio confirmado se DESCUENTA del saldo. Las cifras de valor, fechas y palabras provienen exclusivamente del reporte oficial de ENAGO. Si el saldo de un año cierra en negativo significa que se consumió por encima de lo prepagado y la siguiente recarga cubrió esa diferencia.',
+    fuente_datos: fuente,
+    moneda: 'USD',
+    estado_deposito_a_la_fecha: {
+      total_depositado_historico_usd: r2(totalDep),
+      total_utilizado_historico_usd: r2(totalUsed),
+      saldo_disponible_actual_usd: r2(saldoActual),
+      paquetes_comprados: deposits.map(d => ({ fecha: d.deposit_date, valor_usd: r2(Number(d.amount_usd) || dep(d)), retencion_usd: r2(Number(d.withholding_tax_usd) || 0), recibido_usd: r2(dep(d)) })),
+      paquete_vigente: paqueteVigente,
+    },
+    cierre_anual_deposito: cierreAnual,
+    resumen_periodo: {
+      periodo: `${yearFrom}–${yearTo}`,
+      encargos_atendidos: active.length,
+      encargos_en_proceso: inRange.filter(o => o.status === 'En proceso').length,
+      encargos_cancelados: inRange.filter(o => o.status === 'Cancelado').length,
+      inversion_total_usd: r2(totalUSD),
+      palabras_procesadas: words,
+      costo_promedio_por_palabra_usd: pricedWords ? Number((pricedUSD / pricedWords).toFixed(4)) : null,
+      ticket_promedio_usd: priced.length ? r2(pricedUSD / priced.length) : 0,
+      palabras_promedio_por_manuscrito: active.length ? Math.round(words / active.length) : 0,
+      tiempo_promedio_entrega_dias: ta.length ? Math.round(ta.reduce((a, o) => a + o.turnaround_days, 0) / ta.length) : null,
+    },
+    evolucion_anual: Object.values(porAño).sort((a, b) => a.año - b.año).map(r => ({ ...r, valor_usd: r2(r.valor_usd) })),
+    desglose_por_servicio: porServicio,
+    gestores_que_tramitan_solicitudes: porGestor,
+    datos_academicos: {
+      nota_cobertura: `El registro interno (investigador, artículo, revista, cuartil, facultad) solo existe para ${enriched.length} de ${active.length} encargos del período (registro iniciado en 2024). Los porcentajes de cuartil y facultad se calculan SOLO sobre los encargos con dato; no extrapolar al total.`,
+      encargos_con_datos_academicos: enriched.length,
+      encargos_con_cuartil: withQ.length,
+      tasa_alto_impacto_q1_q2: withQ.length ? `${Math.round((withQ.filter(o => o.quartile === 'Q1' || o.quartile === 'Q2').length / withQ.length) * 100)}%` : 'Sin datos',
+      desglose_por_cuartil: porCuartil,
+      desglose_por_facultad: porFacultad,
+      top_10_investigadores: topInvestigadores,
+      top_revistas_destino: topRevistas,
+    },
+  };
+}
+
 async function getAllData(supabase: any, yearFrom: number, yearTo: number) {
   const [books, journals, finances, mentoring, certificates, team] = await Promise.all([
     getBooksData(supabase, yearFrom, yearTo),
@@ -574,7 +791,7 @@ function buildSystemPrompt(reportLength: string): string {
 - Tablas resumen por área y análisis conciso de fortalezas, cuellos de botella y tendencias.
 - Tono directo: va al grano con las cifras más relevantes para la toma de decisiones.`,
     detailed: `- Extensión: entre 1400 y 2200 palabras.
-- Incluye secciones completas: Resumen Ejecutivo, Hallazgos Clave, Análisis Detallado por Área (Libros, Revistas, Mentorías, Certificados, Equipo, Finanzas según aplique), Indicadores de Calidad y Cumplimiento, Cuellos de Botella / Oportunidades de Mejora, y Plan de Recomendaciones Priorizadas.
+- Incluye secciones completas: Resumen Ejecutivo, Hallazgos Clave, Análisis Detallado por Área (Libros, Revistas, Mentorías, Certificados, Equipo, Finanzas, Pagos APC, Traducciones según aplique), Indicadores de Calidad y Cumplimiento, Cuellos de Botella / Oportunidades de Mejora, y Plan de Recomendaciones Priorizadas.
 - Usa múltiples tablas para desglosar datos por año, tipo, mentor, facultad, categoría, etc.
 - Incluye análisis de tendencias año a año con porcentajes de cambio y comparativas.
 - Relaciona los datos con estándares de Minciencias, Scopus, Publindex y lineamientos institucionales de la Universidad Simón Bolívar.`,
@@ -589,10 +806,11 @@ Tu rol es generar informes inteligentes de alto impacto basados en datos reales 
    - **Libros y Capítulos**: Producción anual, formatos (digital vs impreso), tipos de libro (compilatorio, completo, memorias, cartillas), registro de ISBN, tipología Minciencias y autores participantes.
    - **Revistas Científicas**: Estado de indexación, posicionamiento en Scopus (cuartiles Q1-Q4), categorías Publindex (A1, A2, B, C), periodicidad y visibilidad internacional.
    - **Programa de Mentorías a Investigadores**: Actividad de acompañamiento a investigadores, sesiones completadas vs agendadas o invitaciones, productividad por mentor (Danilo Valenzuela, Sharon Benitez, Fanny Ortega, etc.), cobertura por facultades y grupos de investigación (A1, A, B), y adopción de plataformas.
-   - **Certificados Editoriales**: Volumen de constancias y certificados emitidos, distribución por categorías (créditos, avales, capítulos, evaluadores), trazabilidad y destinatarios.
+   - **Certificados Editoriales**: Volumen de constancias y certificados emitidos, distribución por categorías institucionales (Avales y Tipología, Créditos y Financiación, Certificados Editorial Externa, Libros de Formación, Manuales y Guías, Evaluación de Pares). NOTA CRÍTICA: En el desglose de editorial, reporta con estricta precisión las cifras de "Editorial Externa" (capítulos y obras en sellos externos como Springer Nature, John Wiley & Sons, Elsevier, CUC, RedCOLSI, etc.) y "Sello Propio (Ediciones Unisimón)", tal como vienen indicadas en el JSON. Jamás reduzcas ni confundas las certificaciones de Editorial Externa.
    - **Equipo Editorial**: Estructura de talento humano, distribución de roles (director, editores de revista, mentores, coordinadores), asignación de editores a revistas institucionales y cobertura operativa.
    - **Gestión Financiera**: Ejecución del presupuesto, distribución de costos de producción y servicios externos.
    - **Pagos APC y Fondo de Publicación Científica**: Liderado por Fernando Alberto Peñaranda (Coordinador de Proyectos). Monitoreo de la bolsa de presupuesto anual asignada vs ejecutada, financiamiento de cargos de procesamiento de artículos científicos, costo promedio por artículo ($7.07M COP en histórico), rango de inversión por ticket, calidad indexada por cuartil (Q1, Q2, Q3, Q4), tasa de alto impacto (83% Q1/Q2), índice de autoría de correspondencia Unisimón (62%), ranking de los 10 investigadores con mayor solicitud de servicios (Dr. Valmore Bermúdez, Dr. Eduardo Navarro Jiménez, Dr. Roosvel Soto Díaz, etc.), grupos de investigación beneficiados, y **análisis del porcentaje de publicaciones subsidiadas frente a la producción total indexada en Scopus (AF-ID 60106970 / 60112687)**, donde el 26.7% global de todos los artículos y reviews de Unisimón (373 de 1.395 en 2020-2026) fueron posibles gracias al subsidio APC, alcanzando picos del 37.9% en 2022 y 33.3% en 2025.
+   - **Traducciones Científicas (ENAGO)**: Liderado por Fernando Alberto Peñaranda (Coordinador de Proyectos). La Universidad compra a ENAGO **paquetes PREPAGADOS en USD** (el último: 27 de enero de 2025 por USD 74.317,68) y cada servicio (Traducción + Edición, Corrección de estilo, Edición sustantiva) se DESCUENTA del saldo. El informe debe: (a) presentar el ESTADO DEL DEPÓSITO a la fecha (paquete vigente, saldo arrastrado, consumido, saldo disponible, consumo mensual promedio y proyección de agotamiento); (b) el CIERRE ANUAL del depósito para cada año del período (saldo al 1 de enero, recargas, consumo y saldo al cierre), señalando explícitamente los años que cerraron en NEGATIVO (sobreconsumo cubierto por la recarga siguiente); (c) volumen de encargos, palabras, costo por palabra, ticket promedio y tiempo de entrega; (d) mezcla de servicios; (e) investigadores, facultades, revistas destino y cuartiles (respetando la nota de cobertura: esos datos solo existen desde 2024 y los porcentajes se calculan sobre los encargos con dato). Todas las cifras son en **USD** (NO convertir a COP ni mezclar con la bolsa APC, que es en COP). Recomienda cuándo gestionar la próxima recarga según la proyección.
 3. **Detectar fortalezas y alertas**: Señalar logros sobresalientes y áreas que requieren intervención o seguimiento.
 4. **Dar recomendaciones accionables**: Sugerir mejoras concretas, viables y basadas en los datos reales suministrados.
 5. **Contextualizar institucionalmente**: Considerar la visibilidad de la Universidad Simón Bolívar ante Minciencias, Scopus, Publindex y la comunidad científica.
@@ -608,6 +826,11 @@ Reglas de ESTRUCTURA (MUY IMPORTANTE):
 - Tabla de Pagos APC: columnas de Vigencia/Año, Bolsa Asignada (COP), Total Invertido (COP), Saldo Disponible (COP), Artículos Financiados, Costo Promedio / Paper, % Q1-Q2.
 - Tabla de Cobertura Scopus vs APC: columnas de Vigencia/Año, Producción Total Scopus Unisimón, Artículos Subsidiados con Fondo APC, % Subsidio APC.
 - Tabla de Top Investigadores APC: columnas de Ranking, Investigador, Artículos Apoyados, Impacto (Q1/Q2), Inversión Total (COP), Facultad.
+- Tabla de Estado del Depósito de Traducciones: columnas de Concepto y Valor (USD) con las filas Valor del paquete vigente, Saldo arrastrado del paquete anterior, Servicios descontados desde la compra, Saldo disponible.
+- Tabla de Cierre Anual del Depósito de Traducciones: columnas de Año, Saldo al 1 de enero (USD), Recargas (USD), Consumido (USD), Servicios, Saldo al cierre (USD), Estado.
+- Tabla de Traducciones por Servicio: columnas de Servicio, Encargos, Valor (USD), Palabras, Costo por palabra (USD), % Participación.
+- Tabla de Top Investigadores en Traducciones: columnas de Ranking, Investigador / Equipo, Encargos, Artículos Q1-Q2, Valor (USD), Facultad.
+- Tabla de Traducciones por Facultad y por Cuartil: columnas de Facultad (o Cuartil), Encargos, Valor (USD).
 - Al final incluye siempre una sección transversal de "Conclusiones y Recomendaciones Estratégicas".
 
 Reglas de formato:
@@ -646,6 +869,7 @@ export async function POST(req: NextRequest) {
     books: () => getBooksData(supabase, yearFrom, yearTo),
     journals: () => getJournalsData(supabase),
     apc: () => getAPCData(supabase, yearFrom, yearTo),
+    translations: () => getTranslationsData(supabase, yearFrom, yearTo),
     mentoring: () => getMentoringData(supabase, yearFrom, yearTo),
     finances: () => getFinancesData(supabase, yearFrom, yearTo),
     certificates: () => getCertificatesData(supabase, yearFrom, yearTo),
@@ -656,6 +880,7 @@ export async function POST(req: NextRequest) {
     books: 'LIBROS Y CAPÍTULOS',
     journals: 'REVISTAS CIENTÍFICAS',
     apc: 'PAGOS APC Y FONDO DE PUBLICACIÓN CIENTÍFICA',
+    translations: 'TRADUCCIONES CIENTÍFICAS (ENAGO · DEPÓSITO PREPAGADO)',
     mentoring: 'PROGRAMA DE MENTORÍAS A INVESTIGADORES',
     finances: 'GESTIÓN FINANCIERA Y COSTOS',
     certificates: 'EMISIÓN DE CERTIFICADOS EDITORIALES',
@@ -667,7 +892,7 @@ export async function POST(req: NextRequest) {
   const isCustom = types.includes('custom');
   const isExecutive = types.includes('executive');
   const modulesToFetch = isExecutive
-    ? ['books', 'journals', 'apc', 'mentoring', 'finances', 'certificates', 'team']
+    ? ['books', 'journals', 'apc', 'translations', 'mentoring', 'finances', 'certificates', 'team']
     : types.filter(t => t !== 'custom' && t !== 'executive');
 
   await Promise.all(
@@ -686,6 +911,15 @@ export async function POST(req: NextRequest) {
     basePrompt = `Genera un INFORME EJECUTIVO GENERAL E INTEGRAL de toda la gestión editorial para el período ${yearFrom}–${yearTo}. Cubre todas las áreas activas: ${sections.join(', ')}. Sintetiza la producción bibliográfica, visibilidad en revistas indexadas, acompañamiento a investigadores mediante mentorías, certificaciones expedidas, estructura del equipo de trabajo y finanzas.`;
   } else if (sections.length > 1) {
     basePrompt = `Genera un informe ejecutivo COMBINADO que analice: ${sections.join(' y ')} de la editorial universitaria para el período ${yearFrom}–${yearTo}. Analiza cada área en su propia sección y también las relaciones y sinergias entre ellas.`;
+  } else if (sections.length === 1 && modulesToFetch[0] === 'translations') {
+    basePrompt = `Genera un informe ejecutivo especializado sobre el SERVICIO DE TRADUCCIÓN Y EDICIÓN CIENTÍFICA contratado con ENAGO mediante paquetes prepagados, para el período ${yearFrom}–${yearTo}. Estructura obligatoria:
+## 1. Estado del depósito prepagado a la fecha (tabla Concepto / Valor USD con paquete vigente, saldo arrastrado, consumido y saldo disponible; consumo mensual promedio y proyección de agotamiento).
+## 2. Cierre anual del depósito (tabla por año del período; explica los años que cerraron en negativo).
+## 3. Volumen y eficiencia del servicio (encargos, palabras, costo por palabra, ticket promedio, tiempo de entrega, en proceso / cancelados, evolución anual).
+## 4. Mezcla de servicios (tabla por servicio).
+## 5. Impacto académico (investigadores, facultades, revistas destino y cuartiles, aclarando la cobertura del dato).
+## 6. Alertas y recomendaciones (incluye cuándo gestionar la próxima recarga).
+Usa siempre la moneda USD tal como viene en los datos.`;
   } else if (sections.length === 1) {
     basePrompt = `Genera un informe ejecutivo especializado sobre ${sections[0]} de la editorial universitaria para el período ${yearFrom}–${yearTo}.`;
   } else {
@@ -705,23 +939,36 @@ Genera el informe basado exclusivamente en estos datos. No inventes cifras.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-
-    const response = await ai.models.generateContentStream({
+    const request = {
       model: 'gemini-2.5-flash',
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       config: {
         systemInstruction: buildSystemPrompt(reportLength || 'executive'),
         temperature: 0.7,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
       },
-    });
+    };
+
+    // Reintentos ante fallas de red transitorias (DNS / conexión)
+    let response: Awaited<ReturnType<typeof ai.models.generateContentStream>> | undefined;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        response = await ai.models.generateContentStream(request);
+        break;
+      } catch (e: any) {
+        const code = e?.cause?.code || e?.code;
+        const isNetwork = e?.message === 'fetch failed' || ['ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT'].includes(code);
+        if (!isNetwork || attempt >= 3) throw e;
+        await new Promise(r => setTimeout(r, 1500 * attempt));
+      }
+    }
 
     // Stream the response
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of response) {
+          for await (const chunk of response!) {
             const text = chunk.text || '';
             if (text) {
               controller.enqueue(encoder.encode(text));
@@ -743,6 +990,11 @@ Genera el informe basado exclusivamente en estos datos. No inventes cifras.`;
     });
   } catch (err: any) {
     console.error('Gemini error:', err);
-    return Response.json({ error: err.message || 'Error al generar informe' }, { status: 500 });
+    const code = err?.cause?.code || err?.code;
+    const isNetwork = err?.message === 'fetch failed' || ['ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT'].includes(code);
+    const msg = isNetwork
+      ? 'No hay conexión con el servicio de IA de Google (Gemini). Verifique la conexión a internet o la red/VPN institucional e intente de nuevo.'
+      : (err.message || 'Error al generar informe');
+    return Response.json({ error: msg }, { status: isNetwork ? 503 : 500 });
   }
 }
